@@ -1,0 +1,49 @@
+# Build artifacts
+node_modules
+dist
+build
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment files (injected via build-args at build time)
+.env
+.env.local
+.env.*.local
+
+# Docker config files themselves
+Dockerfile
+docker-compose.yml
+
+# Git
+.git
+.gitignore
+
+# IDE and editor settings
+.vscode/
+.idea/
+
+# Tests and documentation
+__tests__/
+test/
+tests/
+spec/
+*.md
+
+# Temporary and OS files
+*.swp
+*.swo
+*.DS_Store
+*.log
+*.tmp
+
+# Coverage output
+coverage
+
+# NOTE: pnpm-lock.yaml is intentionally NOT excluded.
+# It is required by `pnpm install --frozen-lockfile` for deterministic builds.
+# npm's package-lock.json is excluded (not needed when using pnpm).
+package-lock.json
