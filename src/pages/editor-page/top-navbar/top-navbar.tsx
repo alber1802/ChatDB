@@ -7,10 +7,16 @@ import { LastSaved } from './last-saved';
 import { LanguageNav } from './language-nav/language-nav';
 import { Menu } from './menu/menu';
 
+import { useAuth } from '@/context/auth-context/auth-context';
+import { IS_SUPABASE_ENABLED } from '@/lib/env';
+import { LogOut, User } from 'lucide-react';
+import { Button } from '@/components/button/button';
+
 export interface TopNavbarProps {}
 
 export const TopNavbar: React.FC<TopNavbarProps> = () => {
     const { effectiveTheme } = useTheme();
+    const { user, signOut } = useAuth();
 
     const renderStars = useCallback(() => {
         return (
@@ -50,6 +56,26 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
                 <LastSaved />
                 {renderStars()}
                 <LanguageNav />
+                {IS_SUPABASE_ENABLED && user && (
+                    <div className="flex items-center gap-2 border-l border-slate-800 pl-2">
+                        <div
+                            className="flex max-w-[150px] items-center gap-1.5 truncate rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs text-muted-foreground"
+                            title={user.email}
+                        >
+                            <User className="size-3" />
+                            <span className="truncate">{user.email}</span>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7 text-muted-foreground hover:text-white"
+                            onClick={() => signOut()}
+                            title="Cerrar Sesión"
+                        >
+                            <LogOut className="size-3.5" />
+                        </Button>
+                    </div>
+                )}
             </div>
         </nav>
     );

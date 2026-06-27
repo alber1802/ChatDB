@@ -7,9 +7,14 @@ import { Button } from '@/components/button/button';
 import { useSidebar } from '@/components/sidebar/use-sidebar';
 import { MenuIcon } from 'lucide-react';
 
+import { useAuth } from '@/context/auth-context/auth-context';
+import { IS_SUPABASE_ENABLED } from '@/lib/env';
+import { LogOut } from 'lucide-react';
+
 export interface TopNavbarMobileProps {}
 
 export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
+    const { user, signOut } = useAuth();
     const renderStars = useCallback(() => {
         return (
             <iframe
@@ -51,6 +56,17 @@ export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
                     <div className="flex items-center gap-2">
                         {renderStars()}
                         <LanguageNav />
+                        {IS_SUPABASE_ENABLED && user && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7 text-muted-foreground"
+                                onClick={() => signOut()}
+                                title="Cerrar Sesión"
+                            >
+                                <LogOut className="size-3.5" />
+                            </Button>
+                        )}
                     </div>
                 </div>
                 <Menu />

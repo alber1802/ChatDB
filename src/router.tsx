@@ -5,7 +5,18 @@ import type { TemplatePageLoaderData } from './pages/template-page/template-page
 import type { TemplatesPageLoaderData } from './pages/templates-page/templates-page';
 import { getTemplatesAndAllTags } from './templates-data/template-utils';
 
+import { ProtectedRoute } from './components/protected-route/protected-route';
+
 const routes: RouteObject[] = [
+    {
+        path: 'auth',
+        async lazy() {
+            const { AuthPage } = await import('./pages/auth-page/auth-page');
+            return {
+                element: <AuthPage />,
+            };
+        },
+    },
     ...['', 'diagrams/:diagramId'].map((path) => ({
         path,
         async lazy() {
@@ -13,7 +24,11 @@ const routes: RouteObject[] = [
                 await import('./pages/editor-page/editor-page');
 
             return {
-                element: <EditorPage />,
+                element: (
+                    <ProtectedRoute>
+                        <EditorPage />
+                    </ProtectedRoute>
+                ),
             };
         },
     })),
