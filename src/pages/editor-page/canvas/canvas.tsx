@@ -127,9 +127,7 @@ const HIGHLIGHTED_EDGE_Z_INDEX = 1;
 const DEFAULT_EDGE_Z_INDEX = 0;
 
 export type EdgeType =
-    | RelationshipEdgeType
-    | DependencyEdgeType
-    | TempFloatingEdgeType;
+    RelationshipEdgeType | DependencyEdgeType | TempFloatingEdgeType;
 
 export type NodeType =
     | TableNodeType

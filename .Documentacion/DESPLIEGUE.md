@@ -11,8 +11,8 @@ de desarrollo, Docker local y Heroku en producción.
 
 ## 🛠️ Requisitos Previos
 
-- **Node.js** v20+
-- **pnpm** v9+ (`corepack enable && corepack prepare pnpm@9 --activate`)
+- **Node.js** v22+ (LTS recomendado)
+- **pnpm** v10+ (`corepack enable && corepack prepare pnpm@10 --activate`)
 - **Docker Desktop**
 - **Heroku CLI** v11+
 - **Cuenta de Supabase** con proyecto activo
@@ -49,6 +49,11 @@ pnpm dev
 > variables de Vite que se **incrustan en el bundle en tiempo de compilación**.
 > Por eso DEBEN pasarse como `--build-arg` al construir la imagen, no como `-e`
 > al ejecutar el contenedor.
+>
+> 💡 **Nota sobre `.dockerignore`**: Es fundamental que `node_modules` esté
+> descomentado en el archivo `.dockerignore` para evitar que la carpeta local de la máquina
+> host (Windows) sobrescriba la carpeta `node_modules` construida para Linux Alpine dentro del contenedor,
+> lo que de lo contrario causará errores del tipo `ERR_MODULE_NOT_FOUND` al ejecutar Vite.
 
 ### Paso 2.1 — Construir la imagen
 
@@ -100,22 +105,34 @@ heroku container:login
 ```
 
 ### Paso 3.2 — Build y Push de la imagen a Heroku
-Heroku construye la imagen localmente y la sube a su registry.
-Las credenciales de Supabase se pasan como `--arg`:
 
+> ⚠️ **Error de API Key / Heroku Registry**: 
+> 1. Puesto que la clave de Supabase (`anon_key`) es un JWT largo con caracteres especiales, el comando `heroku container:push --arg` puede truncar o fallar al parsear la cadena completa en la CLI de Heroku.
+> 2. Las versiones modernas de Docker Desktop generan por defecto manifiestos en formato OCI (con procedencia/atestación) que Heroku Registry rechaza con un error `error from registry: unsupported`.
+>
+> Para solucionar ambos problemas, se debe construir la imagen usando `docker buildx` con el flag `--provenance=false` para la compatibilidad del registro y taggear la imagen para el registro de Heroku directamente.
+
+#### Comando de Construcción Compatible (Local):
 ```bash
-# Windows (PowerShell — una sola línea)
-heroku container:push web --app chatdb-alber --arg VITE_SUPABASE_URL=https://tu-proyecto.supabase.co,VITE_SUPABASE_ANON_KEY=tu-anon-key,VITE_DISABLE_ANALYTICS=true
+# Windows (PowerShell)
+docker buildx build --provenance=false --load --no-cache `
+  --build-arg VITE_SUPABASE_URL="https://yburqxpgzcymdyolbiqg.supabase.co" `
+  --build-arg "VITE_SUPABASE_ANON_KEY=tu-anon-key-de-supabase" `
+  --build-arg VITE_DISABLE_ANALYTICS=true `
+  -t registry.heroku.com/chatdb-alber/web .
 
 # Linux / Mac
-heroku container:push web \
-  --app chatdb-alber \
-  --arg VITE_SUPABASE_URL=https://tu-proyecto.supabase.co \
-  --arg VITE_SUPABASE_ANON_KEY=tu-anon-key \
-  --arg VITE_DISABLE_ANALYTICS=true
+docker buildx build --provenance=false --load --no-cache \
+  --build-arg VITE_SUPABASE_URL="https://yburqxpgzcymdyolbiqg.supabase.co" \
+  --build-arg "VITE_SUPABASE_ANON_KEY=tu-anon-key-de-supabase" \
+  --build-arg VITE_DISABLE_ANALYTICS=true \
+  -t registry.heroku.com/chatdb-alber/web .
 ```
 
-> ⏱️ Este proceso tarda ~3-5 minutos (build local + upload de layers al registry).
+#### Comando de Push:
+```bash
+docker push registry.heroku.com/chatdb-alber/web
+```
 
 ### Paso 3.3 — Release (activar la imagen en producción)
 ```bash

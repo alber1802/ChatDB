@@ -319,14 +319,12 @@ export function adjustTablePositionsWithoutAreas(
 
             for (const area of areas) {
                 // Check if the table position would overlap with the area (with buffer)
-                if (
-                    !(
-                        x + currentWidth < area.x - buffer ||
-                        x > area.x + area.width + buffer ||
-                        y + currentHeight < area.y - buffer ||
-                        y > area.y + area.height + buffer
-                    )
-                ) {
+                if (!(
+                    x + currentWidth < area.x - buffer ||
+                    x > area.x + area.width + buffer ||
+                    y + currentHeight < area.y - buffer ||
+                    y > area.y + area.height + buffer
+                )) {
                     return true;
                 }
             }

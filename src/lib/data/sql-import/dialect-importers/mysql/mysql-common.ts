@@ -27,8 +27,7 @@ export interface TableReference {
 
 export interface ColumnReference {
     column?:
-        | string
-        | { value?: string; expr?: { value?: string; type?: string } };
+        string | { value?: string; expr?: { value?: string; type?: string } };
     expr?: { value?: string; type?: string };
     value?: string;
     type?: string;

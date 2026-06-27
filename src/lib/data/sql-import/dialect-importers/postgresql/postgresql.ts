@@ -1093,13 +1093,11 @@ export async function fromPostgres(
                             // Check if it's a serial type
                             const isSerialType = isSerialTypeName(rawDataType);
                             const typeLength = columnDef.definition?.length as
-                                | number
-                                | undefined;
+                                number | undefined;
 
                             // Check if this is an array type (node-sql-parser stores this separately)
                             const arrayInfo = definition?.array as
-                                | { dimension?: number }
-                                | undefined;
+                                { dimension?: number } | undefined;
                             const isArrayType =
                                 arrayInfo?.dimension !== undefined ||
                                 rawDataType.endsWith('[]');
@@ -1557,8 +1555,7 @@ export async function fromPostgres(
                             // Check if it's a serial type
                             const isSerialType = isSerialTypeName(rawDataType);
                             const typeLength = definition?.length as
-                                | number
-                                | undefined;
+                                number | undefined;
 
                             // Normalize the type (pass length to handle parser quirks)
                             let finalDataType = normalizePostgreSQLType(
@@ -1701,8 +1698,7 @@ export async function fromPostgres(
                                 const isSerialType =
                                     isSerialTypeName(rawDataType);
                                 const typeLength = definition?.length as
-                                    | number
-                                    | undefined;
+                                    number | undefined;
 
                                 // Normalize the type (pass length to handle parser quirks)
                                 let finalDataType = normalizePostgreSQLType(

@@ -10,9 +10,9 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Local environment files (injected via build-args at build time)
-.env
-.env.local
-.env.*.local
+# .env
+# .env.local
+# .env.*.local
 
 # Docker config files themselves
 Dockerfile
@@ -41,9 +41,10 @@ spec/
 *.tmp
 
 # Coverage output
-coverage
+# coverage
 
 # NOTE: pnpm-lock.yaml is intentionally NOT excluded.
 # It is required by `pnpm install --frozen-lockfile` for deterministic builds.
 # npm's package-lock.json is excluded (not needed when using pnpm).
+
 package-lock.json

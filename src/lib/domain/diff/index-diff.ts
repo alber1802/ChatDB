@@ -2,11 +2,7 @@ import { z } from 'zod';
 import type { DBIndex, IndexType } from '../db-index';
 
 export type IndexDiffAttribute =
-    | 'name'
-    | 'unique'
-    | 'fieldIds'
-    | 'type'
-    | 'comments';
+    'name' | 'unique' | 'fieldIds' | 'type' | 'comments';
 
 export const indexDiffAttributeSchema: z.ZodType<IndexDiffAttribute> = z.union([
     z.literal('name'),
@@ -75,9 +71,7 @@ export const indexDiffChangedSchema: z.ZodType<IndexDiffChanged> = z.object({
 });
 
 export type IndexDiff<T = DBIndex> =
-    | IndexDiffAdded<T>
-    | IndexDiffRemoved
-    | IndexDiffChanged;
+    IndexDiffAdded<T> | IndexDiffRemoved | IndexDiffChanged;
 
 export const createIndexDiffSchema = <T = DBIndex>(
     indexSchema: z.ZodType<T>

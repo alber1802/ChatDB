@@ -64,9 +64,7 @@ export const createTableDiffAddedSchema = <T = DBTable>(
 };
 
 export type TableDiff<T = DBTable> =
-    | TableDiffChanged
-    | TableDiffRemoved
-    | TableDiffAdded<T>;
+    TableDiffChanged | TableDiffRemoved | TableDiffAdded<T>;
 
 export const createTableDiffSchema = <T = DBTable>(
     tableSchema: z.ZodType<T>

@@ -9,8 +9,7 @@ export const highlightErrorLine = ({
     error: DBMLError;
     model?: monaco.editor.ITextModel | null;
     editorDecorationsCollection:
-        | monaco.editor.IEditorDecorationsCollection
-        | undefined;
+        monaco.editor.IEditorDecorationsCollection | undefined;
 }) => {
     if (!model) return;
     if (!editorDecorationsCollection) return;
@@ -42,8 +41,7 @@ export const highlightErrorLine = ({
 
 export const clearErrorHighlight = (
     editorDecorationsCollection:
-        | monaco.editor.IEditorDecorationsCollection
-        | undefined
+        monaco.editor.IEditorDecorationsCollection | undefined
 ) => {
     if (editorDecorationsCollection) {
         editorDecorationsCollection.clear();

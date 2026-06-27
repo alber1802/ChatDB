@@ -64,9 +64,7 @@ export const createNoteDiffAddedSchema = <T = Note>(
 };
 
 export type NoteDiff<T = Note> =
-    | NoteDiffChanged
-    | NoteDiffRemoved
-    | NoteDiffAdded<T>;
+    NoteDiffChanged | NoteDiffRemoved | NoteDiffAdded<T>;
 
 export const createNoteDiffSchema = <T = Note>(
     noteSchema: z.ZodType<T>

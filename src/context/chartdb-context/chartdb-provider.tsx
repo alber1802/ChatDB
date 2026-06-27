@@ -122,15 +122,13 @@ export const ChartDBProvider: React.FC<
                           if (b === defaultSchemaName) return 1;
                           return a.localeCompare(b);
                       })
-                      .map(
-                          (schema): DBSchema => ({
-                              id: schemaNameToSchemaId(schema),
-                              name: schema,
-                              tableCount: tables.filter(
-                                  (table) => table.schema === schema
-                              ).length,
-                          })
-                      )
+                      .map((schema): DBSchema => ({
+                          id: schemaNameToSchemaId(schema),
+                          name: schema,
+                          tableCount: tables.filter(
+                              (table) => table.schema === schema
+                          ).length,
+                      }))
                 : [],
         [tables, defaultSchemaName, databaseType]
     );

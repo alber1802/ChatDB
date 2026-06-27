@@ -2,11 +2,7 @@ import { emptyFn } from '@/lib/utils';
 import { createContext } from 'react';
 
 export type SidebarSection =
-    | 'dbml'
-    | 'tables'
-    | 'refs'
-    | 'customTypes'
-    | 'visuals';
+    'dbml' | 'tables' | 'refs' | 'customTypes' | 'visuals';
 
 export type VisualsTab = 'areas' | 'notes';
 

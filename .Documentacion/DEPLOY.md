@@ -9,8 +9,8 @@
 
 | Herramienta | Versión mínima | Verificar con |
 |---|---|---|
-| Node.js | 20+ | `node --version` |
-| pnpm | 9+ | `pnpm --version` |
+| Node.js | 22+ | `node --version` |
+| pnpm | 10+ | `pnpm --version` |
 | Docker Desktop | 24+ | `docker --version` |
 | Heroku CLI | 11+ | `heroku --version` |
 | Git | cualquiera | `git --version` |
@@ -19,7 +19,7 @@
 ```bash
 # Via corepack (recomendado, viene con Node 16+)
 corepack enable
-corepack prepare pnpm@9 --activate
+corepack prepare pnpm@10 --activate
 
 # O via npm
 npm install -g pnpm
@@ -179,23 +179,35 @@ heroku stack:set container --app nombre-de-tu-app
 heroku container:login
 ```
 
-### Paso 4 — Build y push de la imagen
+### Paso 4 — Build y push de la imagen (Metodología Recomendada)
 
+> ⚠️ **Error de API Key / Heroku Registry**: 
+> 1. Puesto que la clave de Supabase (`anon_key`) es un JWT largo con caracteres especiales, el comando `heroku container:push --arg` puede truncar o fallar al parsear la cadena completa en la CLI de Heroku.
+> 2. Las versiones modernas de Docker Desktop generan por defecto manifiestos en formato OCI (con procedencia/atestación) que Heroku Registry rechaza con un error `error from registry: unsupported`.
+>
+> Para solucionar ambos problemas, se debe construir la imagen usando `docker buildx` con el flag `--provenance=false` para la compatibilidad del registro y taggear la imagen para el registro de Heroku directamente.
+
+#### 1. Construir la imagen con compatibilidad para Heroku Registry:
 ```bash
-# Windows (PowerShell — todos los --arg en una línea separados por coma)
-heroku container:push web `
-  --app chatdb-alber `
-  --arg VITE_SUPABASE_URL=https://tu-proyecto.supabase.co,VITE_SUPABASE_ANON_KEY=tu-anon-key,VITE_DISABLE_ANALYTICS=true
+# Windows (PowerShell)
+docker buildx build --provenance=false --load --no-cache `
+  --build-arg VITE_SUPABASE_URL="https://tu-proyecto.supabase.co" `
+  --build-arg "VITE_SUPABASE_ANON_KEY=tu-anon-key" `
+  --build-arg VITE_DISABLE_ANALYTICS=true `
+  -t registry.heroku.com/nombre-de-tu-app/web .
 
-# Linux / Mac (un --arg por variable)
-heroku container:push web \
-  --app chatdb-alber \
-  --arg VITE_SUPABASE_URL=https://tu-proyecto.supabase.co \
-  --arg VITE_SUPABASE_ANON_KEY=tu-anon-key \
-  --arg VITE_DISABLE_ANALYTICS=true
+# Linux / Mac
+docker buildx build --provenance=false --load --no-cache \
+  --build-arg VITE_SUPABASE_URL="https://tu-proyecto.supabase.co" \
+  --build-arg "VITE_SUPABASE_ANON_KEY=tu-anon-key" \
+  --build-arg VITE_DISABLE_ANALYTICS=true \
+  -t registry.heroku.com/nombre-de-tu-app/web .
 ```
 
-> ⏱️ Este proceso puede tardar 5-10 minutos (build local + upload al registry de Heroku).
+#### 2. Push directo al Container Registry de Heroku:
+```bash
+docker push registry.heroku.com/nombre-de-tu-app/web
+```
 
 ### Paso 5 — Release (activar la imagen)
 
