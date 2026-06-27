@@ -9,6 +9,8 @@ ARG VITE_OPENAI_API_ENDPOINT
 ARG VITE_LLM_MODEL_NAME
 ARG VITE_HIDE_CHARTDB_CLOUD
 ARG VITE_DISABLE_ANALYTICS
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
 
 WORKDIR /usr/src/app
 
@@ -26,7 +28,9 @@ RUN echo "VITE_OPENAI_API_KEY=${VITE_OPENAI_API_KEY}" > .env && \
     echo "VITE_OPENAI_API_ENDPOINT=${VITE_OPENAI_API_ENDPOINT}" >> .env && \
     echo "VITE_LLM_MODEL_NAME=${VITE_LLM_MODEL_NAME}" >> .env && \
     echo "VITE_HIDE_CHARTDB_CLOUD=${VITE_HIDE_CHARTDB_CLOUD}" >> .env && \
-    echo "VITE_DISABLE_ANALYTICS=${VITE_DISABLE_ANALYTICS}" >> .env
+    echo "VITE_DISABLE_ANALYTICS=${VITE_DISABLE_ANALYTICS}" >> .env && \
+    echo "VITE_SUPABASE_URL=${VITE_SUPABASE_URL}" >> .env && \
+    echo "VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}" >> .env
 
 # Build the production bundle (type-checking is a dev concern; Vite uses esbuild for transpilation)
 RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm exec vite build
