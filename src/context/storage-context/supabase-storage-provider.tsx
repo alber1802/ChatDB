@@ -138,7 +138,9 @@ export const SupabaseStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!userId) return;
             const { error } = await supabase
                 .from('db_tables')
-                .insert(tableToRow(table, diagramId, userId));
+                .upsert(tableToRow(table, diagramId, userId), {
+                    onConflict: 'id',
+                });
             if (error) throw error;
         },
         [userId]
@@ -281,7 +283,9 @@ export const SupabaseStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!userId) return;
             const { error } = await supabase
                 .from('db_relationships')
-                .insert(relationshipToRow(relationship, diagramId, userId));
+                .upsert(relationshipToRow(relationship, diagramId, userId), {
+                    onConflict: 'id',
+                });
             if (error) throw error;
         },
         [userId]
@@ -411,7 +415,9 @@ export const SupabaseStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!userId) return;
             const { error } = await supabase
                 .from('db_dependencies')
-                .insert(dependencyToRow(dependency, diagramId, userId));
+                .upsert(dependencyToRow(dependency, diagramId, userId), {
+                    onConflict: 'id',
+                });
             if (error) throw error;
         },
         [userId]
@@ -520,7 +526,9 @@ export const SupabaseStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!userId) return;
             const { error } = await supabase
                 .from('areas')
-                .insert(areaToRow(area, diagramId, userId));
+                .upsert(areaToRow(area, diagramId, userId), {
+                    onConflict: 'id',
+                });
             if (error) throw error;
         },
         [userId]
@@ -635,7 +643,9 @@ export const SupabaseStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!userId) return;
             const { error } = await supabase
                 .from('db_custom_types')
-                .insert(customTypeToRow(customType, diagramId, userId));
+                .upsert(customTypeToRow(customType, diagramId, userId), {
+                    onConflict: 'id',
+                });
             if (error) throw error;
         },
         [userId]
@@ -746,7 +756,9 @@ export const SupabaseStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!userId) return;
             const { error } = await supabase
                 .from('notes')
-                .insert(noteToRow(note, diagramId, userId));
+                .upsert(noteToRow(note, diagramId, userId), {
+                    onConflict: 'id',
+                });
             if (error) throw error;
         },
         [userId]
@@ -855,7 +867,9 @@ export const SupabaseStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!userId) return;
             const { error: dErr } = await supabase
                 .from('diagrams')
-                .insert(diagramToRow(diagram, userId));
+                .upsert(diagramToRow(diagram, userId), {
+                    onConflict: 'id',
+                });
             if (dErr) throw dErr;
 
             const promises: any[] = [];
@@ -864,42 +878,66 @@ export const SupabaseStorageProvider: React.FC<React.PropsWithChildren> = ({
                 const rows = diagram.tables.map((t) =>
                     tableToRow(t, diagram.id, userId)
                 );
-                promises.push(supabase.from('db_tables').insert(rows));
+                promises.push(
+                    supabase.from('db_tables').upsert(rows, {
+                        onConflict: 'id',
+                    })
+                );
             }
 
             if (diagram.relationships && diagram.relationships.length > 0) {
                 const rows = diagram.relationships.map((r) =>
                     relationshipToRow(r, diagram.id, userId)
                 );
-                promises.push(supabase.from('db_relationships').insert(rows));
+                promises.push(
+                    supabase.from('db_relationships').upsert(rows, {
+                        onConflict: 'id',
+                    })
+                );
             }
 
             if (diagram.dependencies && diagram.dependencies.length > 0) {
                 const rows = diagram.dependencies.map((d) =>
                     dependencyToRow(d, diagram.id, userId)
                 );
-                promises.push(supabase.from('db_dependencies').insert(rows));
+                promises.push(
+                    supabase.from('db_dependencies').upsert(rows, {
+                        onConflict: 'id',
+                    })
+                );
             }
 
             if (diagram.areas && diagram.areas.length > 0) {
                 const rows = diagram.areas.map((a) =>
                     areaToRow(a, diagram.id, userId)
                 );
-                promises.push(supabase.from('areas').insert(rows));
+                promises.push(
+                    supabase.from('areas').upsert(rows, {
+                        onConflict: 'id',
+                    })
+                );
             }
 
             if (diagram.customTypes && diagram.customTypes.length > 0) {
                 const rows = diagram.customTypes.map((c) =>
                     customTypeToRow(c, diagram.id, userId)
                 );
-                promises.push(supabase.from('db_custom_types').insert(rows));
+                promises.push(
+                    supabase.from('db_custom_types').upsert(rows, {
+                        onConflict: 'id',
+                    })
+                );
             }
 
             if (diagram.notes && diagram.notes.length > 0) {
                 const rows = diagram.notes.map((n) =>
                     noteToRow(n, diagram.id, userId)
                 );
-                promises.push(supabase.from('notes').insert(rows));
+                promises.push(
+                    supabase.from('notes').upsert(rows, {
+                        onConflict: 'id',
+                    })
+                );
             }
 
             const results = await Promise.all(promises);
