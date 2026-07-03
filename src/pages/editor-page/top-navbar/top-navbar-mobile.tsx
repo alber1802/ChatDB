@@ -11,7 +11,7 @@ import { useAuth } from '@/context/auth-context/auth-context';
 import { IS_SUPABASE_ENABLED } from '@/lib/env';
 import { LogOut } from 'lucide-react';
 
-export interface TopNavbarMobileProps {}
+export interface TopNavbarMobileProps { }
 
 export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
     const { user, signOut } = useAuth();
@@ -41,7 +41,7 @@ export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
                             <MenuIcon className="size-5" />
                         </Button>
                         <a
-                            href="https://chartdb.io"
+                            href="#"
                             className="cursor-pointer"
                             rel="noreferrer"
                         >

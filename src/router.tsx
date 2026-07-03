@@ -5,6 +5,7 @@ import type { TemplatePageLoaderData } from './pages/template-page/template-page
 import type { TemplatesPageLoaderData } from './pages/templates-page/templates-page';
 import { getTemplatesAndAllTags } from './templates-data/template-utils';
 import { RootFallback } from './components/root-fallback';
+import { RouteErrorBoundary } from './components/route-error-boundary/route-error-boundary';
 
 import { ProtectedRoute } from './components/protected-route/protected-route';
 
@@ -12,6 +13,7 @@ const routes: RouteObject[] = [
     {
         path: '/',
         element: <Outlet />,
+        errorElement: <RouteErrorBoundary />,
         hydrateFallbackElement: <RootFallback />,
         children: [
             {

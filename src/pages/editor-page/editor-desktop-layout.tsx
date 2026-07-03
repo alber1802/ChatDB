@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { SidebarProvider } from '@/components/sidebar/sidebar';
 import { EditorSidebar } from './editor-sidebar/editor-sidebar';
 import { TopNavbar } from './top-navbar/top-navbar';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface EditorDesktopLayoutProps {
     initialDiagram?: Diagram;
@@ -19,7 +20,7 @@ export interface EditorDesktopLayoutProps {
 export const EditorDesktopLayout: React.FC<EditorDesktopLayoutProps> = ({
     initialDiagram,
 }) => {
-    const { isSidePanelShowed } = useLayout();
+    const { isSidePanelShowed, toggleSidePanel } = useLayout();
 
     return (
         <>
@@ -32,8 +33,8 @@ export const EditorDesktopLayout: React.FC<EditorDesktopLayoutProps> = ({
                 <EditorSidebar />
                 <ResizablePanelGroup direction="horizontal">
                     <ResizablePanel
-                        defaultSize={25}
-                        minSize={25}
+                        defaultSize={isSidePanelShowed ? 25 : 0}
+                        minSize={isSidePanelShowed ? 25 : 0}
                         maxSize={isSidePanelShowed ? 99 : 0}
                         className={cn('transition-[flex-grow] duration-200', {
                             'min-w-[350px]': isSidePanelShowed,
@@ -46,7 +47,26 @@ export const EditorDesktopLayout: React.FC<EditorDesktopLayoutProps> = ({
                         className={!isSidePanelShowed ? 'hidden' : ''}
                     />
                     <ResizablePanel defaultSize={75}>
-                        <Canvas initialTables={initialDiagram?.tables ?? []} />
+                        <div className="relative h-full w-full">
+                            <button
+                                onClick={toggleSidePanel}
+                                className={cn(
+                                    "absolute left-3 top-1/2 z-50 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-md hover:bg-accent hover:text-accent-foreground transition-all duration-200 focus:outline-none cursor-pointer hover:scale-110",
+                                    {
+                                        "opacity-80 hover:opacity-100": isSidePanelShowed,
+                                        "opacity-100": !isSidePanelShowed
+                                    }
+                                )}
+                                title={isSidePanelShowed ? "Ocultar panel lateral" : "Mostrar panel lateral"}
+                            >
+                                {isSidePanelShowed ? (
+                                    <ChevronLeft className="size-3.5" />
+                                ) : (
+                                    <ChevronRight className="size-3.5" />
+                                )}
+                            </button>
+                            <Canvas initialTables={initialDiagram?.tables ?? []} />
+                        </div>
                     </ResizablePanel>
                 </ResizablePanelGroup>
             </SidebarProvider>
@@ -55,3 +75,4 @@ export const EditorDesktopLayout: React.FC<EditorDesktopLayoutProps> = ({
 };
 
 export default EditorDesktopLayout;
+

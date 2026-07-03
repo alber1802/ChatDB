@@ -385,7 +385,7 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                         />
                     </>
                 ) : null}
-                {(!connection.inProgress || isTarget) && isConnectable && (
+                {isConnectable && (
                     <>
                         {Array.from(
                             { length: numberOfEdgesToField },
@@ -408,6 +408,7 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                             }
                             position={Position.Left}
                             type="target"
+                            isConnectable={!connection.inProgress || isTarget}
                         />
                     </>
                 )}

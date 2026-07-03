@@ -29,7 +29,7 @@ import { useLocalConfig } from '@/hooks/use-local-config';
 import { useNavigate } from 'react-router-dom';
 import { useAlert } from '@/context/alert-context/alert-context';
 
-export interface MenuProps {}
+export interface MenuProps { }
 
 export const Menu: React.FC<MenuProps> = () => {
     const {
@@ -486,7 +486,7 @@ export const Menu: React.FC<MenuProps> = () => {
                 </MenubarContent>
             </MenubarMenu>
 
-            <MenubarMenu>
+            {/* <MenubarMenu>
                 <MenubarTrigger>{t('menu.help.help')}</MenubarTrigger>
                 <MenubarContent>
                     <MenubarItem onClick={openChartDBDocs}>
@@ -496,7 +496,7 @@ export const Menu: React.FC<MenuProps> = () => {
                         {t('menu.help.join_discord')}
                     </MenubarItem>
                 </MenubarContent>
-            </MenubarMenu>
+            </MenubarMenu> */}
         </Menubar>
     );
 };

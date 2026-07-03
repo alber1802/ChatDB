@@ -13,7 +13,7 @@ import { LogOut, User, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useNavigate } from 'react-router-dom';
 
-export interface TopNavbarProps {}
+export interface TopNavbarProps { }
 
 export const TopNavbar: React.FC<TopNavbarProps> = () => {
     const { effectiveTheme } = useTheme();
@@ -36,7 +36,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
             <div className="flex flex-1 flex-col justify-between gap-x-1 md:flex-row md:justify-normal">
                 <div className="flex items-center justify-between pt-[8px] font-primary md:py-[10px]">
                     <a
-                        href="https://chartdb.io"
+                        href="#"
                         className="cursor-pointer"
                         rel="noreferrer"
                     >
@@ -56,7 +56,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
             <DiagramName />
             <div className="hidden flex-1 items-center justify-end gap-2 sm:flex">
                 <LastSaved />
-                {renderStars()}
+                {/* {renderStars()} */}
                 <LanguageNav />
                 {IS_SUPABASE_ENABLED && user && (
                     <div className="flex items-center gap-2 border-l border-slate-800 pl-2">

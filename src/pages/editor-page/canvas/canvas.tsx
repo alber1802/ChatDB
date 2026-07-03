@@ -412,7 +412,29 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
 
         // Delay edge creation to ensure handles are registered
         const timeoutId = setTimeout(() => {
-            const targetIndexes: Record<string, number> = relationships.reduce(
+            const isTableVisible = (tableId: string) => {
+                const table = tables.find((t) => t.id === tableId);
+                if (!table) return false;
+                if (shouldForceShowTable(table.id)) return true;
+                return (
+                    !filterLoading &&
+                    filterTable({
+                        table: { id: table.id, schema: table.schema },
+                        filter,
+                        options: { defaultSchema: defaultSchemas[databaseType] },
+                    }) &&
+                    (showDBViews ? true : !table.isView)
+                );
+            };
+
+            const visibleRelationships = relationships.filter(
+                (r) => isTableVisible(r.sourceTableId) && isTableVisible(r.targetTableId)
+            );
+            const visibleDependencies = dependencies.filter(
+                (d) => isTableVisible(d.dependentTableId) && isTableVisible(d.tableId)
+            );
+
+            const targetIndexes: Record<string, number> = visibleRelationships.reduce(
                 (acc, relationship) => {
                     acc[
                         `${relationship.targetTableId}${relationship.targetFieldId}`
@@ -423,7 +445,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
             );
 
             const targetDepIndexes: Record<string, number> =
-                dependencies.reduce(
+                visibleDependencies.reduce(
                     (acc, dep) => {
                         acc[dep.tableId] = 0;
                         return acc;
@@ -441,7 +463,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 );
 
                 return [
-                    ...relationships.map(
+                    ...visibleRelationships.map(
                         (relationship): RelationshipEdgeType => {
                             const prevState = prevEdgeStates.get(
                                 relationship.id
@@ -459,7 +481,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                             };
                         }
                     ),
-                    ...dependencies.map((dep): DependencyEdgeType => {
+                    ...visibleDependencies.map((dep): DependencyEdgeType => {
                         const prevState = prevEdgeStates.get(dep.id);
                         return {
                             id: dep.id,
@@ -486,6 +508,10 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         showDBViews,
         tables,
         updateNodeInternals,
+        filter,
+        databaseType,
+        shouldForceShowTable,
+        filterLoading,
     ]);
 
     useEffect(() => {
