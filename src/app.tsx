@@ -4,6 +4,8 @@ import { router } from './router';
 import { TooltipProvider } from './components/tooltip/tooltip';
 import { HelmetData } from './helmet/helmet-data';
 import { HelmetProvider } from 'react-helmet-async';
+import { LocalConfigProvider } from './context/local-config-context/local-config-provider';
+import { ThemeProvider } from './context/theme-context/theme-provider';
 
 import { AuthProvider } from './context/auth-context/auth-context';
 
@@ -12,9 +14,13 @@ export const App = () => {
         <HelmetProvider>
             <HelmetData />
             <TooltipProvider>
-                <AuthProvider>
-                    <RouterProvider router={router} />
-                </AuthProvider>
+                <LocalConfigProvider>
+                    <ThemeProvider>
+                        <AuthProvider>
+                            <RouterProvider router={router} />
+                        </AuthProvider>
+                    </ThemeProvider>
+                </LocalConfigProvider>
             </TooltipProvider>
         </HelmetProvider>
     );

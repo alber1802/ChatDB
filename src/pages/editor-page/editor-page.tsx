@@ -6,13 +6,11 @@ import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { useLocalConfig } from '@/hooks/use-local-config';
 import { FullScreenLoaderProvider } from '@/context/full-screen-spinner-context/full-screen-spinner-provider';
 import { LayoutProvider } from '@/context/layout-context/layout-provider';
-import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { StorageProviderSelector } from '@/context/storage-context/storage-provider-selector';
 import { ConfigProvider } from '@/context/config-context/config-provider';
 import { RedoUndoStackProvider } from '@/context/history-context/redo-undo-stack-provider';
 import { ChartDBProvider } from '@/context/chartdb-context/chartdb-provider';
 import { HistoryProvider } from '@/context/history-context/history-provider';
-import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { ReactFlowProvider } from '@xyflow/react';
 import { ExportImageProvider } from '@/context/export-image-context/export-image-provider';
 import { DialogProvider } from '@/context/dialog-context/dialog-provider';
@@ -112,39 +110,35 @@ const EditorPageComponent: React.FC = () => {
 };
 
 export const EditorPage: React.FC = () => (
-    <LocalConfigProvider>
-        <ThemeProvider>
-            <FullScreenLoaderProvider>
-                <LayoutProvider>
-                    <StorageProviderSelector>
-                        <ConfigProvider>
-                            <RedoUndoStackProvider>
-                                <DiffProvider>
-                                    <ChartDBProvider>
-                                        <DiagramFilterProvider>
-                                            <HistoryProvider>
-                                                <ReactFlowProvider>
-                                                    <CanvasProvider>
-                                                        <ExportImageProvider>
-                                                            <AlertProvider>
-                                                                <DialogProvider>
-                                                                    <KeyboardShortcutsProvider>
-                                                                        <EditorPageComponent />
-                                                                    </KeyboardShortcutsProvider>
-                                                                </DialogProvider>
-                                                            </AlertProvider>
-                                                        </ExportImageProvider>
-                                                    </CanvasProvider>
-                                                </ReactFlowProvider>
-                                            </HistoryProvider>
-                                        </DiagramFilterProvider>
-                                    </ChartDBProvider>
-                                </DiffProvider>
-                            </RedoUndoStackProvider>
-                        </ConfigProvider>
-                    </StorageProviderSelector>
-                </LayoutProvider>
-            </FullScreenLoaderProvider>
-        </ThemeProvider>
-    </LocalConfigProvider>
+    <FullScreenLoaderProvider>
+        <LayoutProvider>
+            <StorageProviderSelector>
+                <ConfigProvider>
+                    <RedoUndoStackProvider>
+                        <DiffProvider>
+                            <ChartDBProvider>
+                                <DiagramFilterProvider>
+                                    <HistoryProvider>
+                                        <ReactFlowProvider>
+                                            <CanvasProvider>
+                                                <ExportImageProvider>
+                                                    <AlertProvider>
+                                                        <DialogProvider>
+                                                            <KeyboardShortcutsProvider>
+                                                                <EditorPageComponent />
+                                                            </KeyboardShortcutsProvider>
+                                                        </DialogProvider>
+                                                    </AlertProvider>
+                                                </ExportImageProvider>
+                                            </CanvasProvider>
+                                        </ReactFlowProvider>
+                                    </HistoryProvider>
+                                </DiagramFilterProvider>
+                            </ChartDBProvider>
+                        </DiffProvider>
+                    </RedoUndoStackProvider>
+                </ConfigProvider>
+            </StorageProviderSelector>
+        </LayoutProvider>
+    </FullScreenLoaderProvider>
 );

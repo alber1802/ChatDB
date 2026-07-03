@@ -611,21 +611,30 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                         style={{
                             maxHeight: expanded
                                 ? `${(editTableMode && editModeInitialFieldCount !== null ? editModeInitialFieldCount : fields.length) * 2}rem` // h-8 per field
-                                : `${TABLE_MINIMIZED_FIELDS * 2}rem`, // h-8 per field
+                                : `${visibleFields.length * 2}rem`, // h-8 per field
                         }}
                     >
-                        {visibleFields.map((field: DBField) => (
-                            <TableNodeField
-                                key={field.id}
-                                focused={focused}
-                                tableNodeId={id}
-                                field={field}
-                                highlighted={highlightedFieldIds.has(field.id)}
-                                visible={true}
-                                isConnectable={!table.isView}
-                                targetEdgeCount={targetEdgeCounts?.[field.id]}
-                            />
-                        ))}
+                        {fields.map((field: DBField) => {
+                            const isFieldVisible =
+                                expanded ||
+                                visibleFields.some((vf) => vf.id === field.id);
+                            return (
+                                <TableNodeField
+                                    key={field.id}
+                                    focused={focused}
+                                    tableNodeId={id}
+                                    field={field}
+                                    highlighted={highlightedFieldIds.has(
+                                        field.id
+                                    )}
+                                    visible={isFieldVisible}
+                                    isConnectable={!table.isView}
+                                    targetEdgeCount={
+                                        targetEdgeCounts?.[field.id]
+                                    }
+                                />
+                            );
+                        })}
                     </div>
                     {(editTableMode && editModeInitialFieldCount !== null
                         ? editModeInitialFieldCount

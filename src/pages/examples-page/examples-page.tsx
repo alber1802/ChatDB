@@ -5,9 +5,7 @@ import type { Example } from './examples-data/examples-data';
 import { examples } from './examples-data/examples-data';
 import { ExampleCard } from './example-card';
 import { useTheme } from '@/hooks/use-theme';
-import { LocalConfigProvider } from '@/context/local-config-context/local-config-provider';
 import { StorageProviderSelector } from '@/context/storage-context/storage-provider-selector';
-import { ThemeProvider } from '@/context/theme-context/theme-provider';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useStorage } from '@/hooks/use-storage';
@@ -107,11 +105,7 @@ const ExamplesPageComponent: React.FC = () => {
 };
 
 export const ExamplesPage: React.FC = () => (
-    <LocalConfigProvider>
-        <StorageProviderSelector>
-            <ThemeProvider>
-                <ExamplesPageComponent />
-            </ThemeProvider>
-        </StorageProviderSelector>{' '}
-    </LocalConfigProvider>
+    <StorageProviderSelector>
+        <ExamplesPageComponent />
+    </StorageProviderSelector>
 );

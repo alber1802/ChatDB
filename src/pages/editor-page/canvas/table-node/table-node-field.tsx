@@ -346,24 +346,26 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
         return (
             <div
                 className={cn(
-                    'group relative flex h-8 items-center justify-between gap-1 border-t px-3 text-sm last:rounded-b-[6px] hover:bg-slate-100 dark:hover:bg-slate-800',
+                    'group relative flex items-center justify-between gap-1 px-3 text-sm last:rounded-b-[6px] hover:bg-slate-100 dark:hover:bg-slate-800',
                     'transition-all duration-200 ease-in-out',
+                    visible
+                        ? 'h-8 max-h-8 border-t opacity-100'
+                        : 'h-0 max-h-0 border-t-0 py-0 my-0 overflow-hidden opacity-0 pointer-events-none',
                     {
                         'bg-pink-100 dark:bg-pink-900':
-                            highlighted && !isCustomTypeHighlighted,
+                            highlighted && !isCustomTypeHighlighted && visible,
                         'bg-yellow-100 dark:bg-yellow-900':
-                            isCustomTypeHighlighted,
-                        'max-h-8 opacity-100': visible,
-                        'z-0 max-h-0 overflow-hidden opacity-0': !visible,
+                            isCustomTypeHighlighted && visible,
                         'bg-sky-200 dark:bg-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900 border-sky-300 dark:border-sky-700':
                             isDiffFieldChanged &&
                             !isSummaryOnly &&
                             !isDiffFieldRemoved &&
-                            !isDiffNewField,
+                            !isDiffNewField &&
+                            visible,
                         'bg-red-200 dark:bg-red-800 hover:bg-red-100 dark:hover:bg-red-900 border-red-300 dark:border-red-700':
-                            isDiffFieldRemoved,
+                            isDiffFieldRemoved && visible,
                         'bg-green-200 dark:bg-green-800 hover:bg-green-100 dark:hover:bg-green-900 border-green-300 dark:border-green-700':
-                            isDiffNewField,
+                            isDiffNewField && visible,
                     }
                 )}
             >

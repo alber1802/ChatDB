@@ -9,14 +9,16 @@ import { Menu } from './menu/menu';
 
 import { useAuth } from '@/context/auth-context/auth-context';
 import { IS_SUPABASE_ENABLED } from '@/lib/env';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/button/button';
+import { useNavigate } from 'react-router-dom';
 
 export interface TopNavbarProps {}
 
 export const TopNavbar: React.FC<TopNavbarProps> = () => {
     const { effectiveTheme } = useTheme();
-    const { user, signOut } = useAuth();
+    const { user, signOut, isAdmin } = useAuth();
+    const navigate = useNavigate();
 
     const renderStars = useCallback(() => {
         return (
@@ -58,6 +60,17 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
                 <LanguageNav />
                 {IS_SUPABASE_ENABLED && user && (
                     <div className="flex items-center gap-2 border-l border-slate-800 pl-2">
+                        {isAdmin && isAdmin() && (
+                            <Button
+                                variant="outline"
+                                className="h-7 gap-1.5 border border-primary/25 bg-primary/5 px-2.5 text-[11px] font-semibold text-primary transition-all duration-200 hover:bg-primary/10"
+                                onClick={() => navigate('/admin')}
+                                title="Panel de Administración"
+                            >
+                                <ShieldAlert className="size-3.5" />
+                                Admin
+                            </Button>
+                        )}
                         <div
                             className="flex max-w-[150px] items-center gap-1.5 truncate rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs text-muted-foreground"
                             title={user.email}
