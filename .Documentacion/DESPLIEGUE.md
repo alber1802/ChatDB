@@ -1,183 +1,127 @@
-# 🚀 Guía de Despliegue y Configuración de ChatDB
+# 🚀 Guía de Despliegue Automatizada y Simplificada con Docker
 
-Esta guía detalla los pasos para configurar, ejecutar y desplegar la aplicación
-**ChatDB** (con autenticación y almacenamiento cloud via Supabase) en entorno local
-de desarrollo, Docker local y Heroku en producción.
+## Versión 2.0 — Arquitectura Limpia (Sin entrypoint.sh)
 
-> **App en producción**: https://chatdb-alber-060263da84d8.herokuapp.com/  
-> **Repositorio**: https://github.com/alber1802/ChatDB
+Esta documentación detalla el flujo moderno y optimizado para compilar, empaquetar y desplegar la aplicación **ChatDB** tanto en entornos locales de Docker como en la infraestructura de producción de Heroku, integrando de forma segura las variables de entorno de Supabase sin recurrir a scripts intermediarios complejos.
 
----
-
-## 🛠️ Requisitos Previos
-
-- **Node.js** v22+ (LTS recomendado)
-- **pnpm** v10+ (`corepack enable && corepack prepare pnpm@10 --activate`)
-- **Docker Desktop**
-- **Heroku CLI** v11+
-- **Cuenta de Supabase** con proyecto activo
+### Resumen del Cambio de Arquitectura
+Se eliminó por completo el archivo `entrypoint.sh` y la inyección por consola mediante `--build-arg`. Ahora, Nginx utiliza su motor nativo de plantillas para leer el puerto dinámico de Heroku, y Vite absorbe de forma segura todas las credenciales desde el archivo local estructurado `.env.docker` en tiempo de compilación.
 
 ---
 
-## 💻 1. Ejecución en Local (Desarrollo)
+## 1. Configuración de Archivos del Sistema
 
-### Paso 1.1 — Instalar dependencias
-```bash
-pnpm install
-```
+### 1.1 Archivo de Credenciales Seguras (`.env.docker`)
+Este archivo se ubica en la raíz del proyecto. Debe contener todas las variables necesarias para el Frontend. Al compilarse dentro de la etapa intermedia de Docker, queda incrustado de manera estática en el bundle sin exponerse en los logs externos.
 
-### Paso 1.2 — Configurar Variables de Entorno
-Crea `.env.local` en la raíz del proyecto:
+**Contenido de ejemplo para `.env.docker`:**
 ```env
-VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
-VITE_SUPABASE_ANON_KEY=tu-anon-key-de-supabase
+VITE_SUPABASE_URL=https://yburqxpgzcymdyolbiqg.supabase.co
+VITE_SUPABASE_ANON_KEY=tu_anon_key_real_aqui
+VITE_DISABLE_ANALYTICS=true
 ```
 
-> Para este proyecto los valores reales están en `.env.local` (no commiteado por seguridad).
+> 🔒 **Nota de Seguridad**: Este archivo está incluido en `.gitignore` para prevenir que credenciales reales sean expuestas en repositorios de control de versiones.
 
-### Paso 1.3 — Iniciar servidor de desarrollo
-```bash
-pnpm dev
-# → http://localhost:5173
+### 1.2 Plantilla de Servidor Nginx (`default.conf.template`)
+Configuración limpia que permite a las rutas de React funcionar correctamente bajo el enrutador de Vite (SPA) y mapea dinámicamente el puerto asignado.
+
+```nginx
+server {
+    listen       ${PORT};
+    listen  [::]:${PORT};
+
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+        # Esto es vital para que las rutas de React/Vite funcionen
+        try_files  $uri $uri/ /index.html;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+}
+```
+
+### 1.3 Dockerfile de Producción Optimizado (`Dockerfile`)
+Estructura multi-stage que utiliza Node 22 para compilar y Nginx Stable Alpine para servir los archivos estáticos.
+
+```dockerfile
+# ─── Stage 1: Build ───────────────────────────────────────────────────────────
+FROM node:22-alpine AS builder
+
+RUN corepack enable && corepack prepare pnpm@10 --activate
+
+WORKDIR /usr/src/app
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+
+# Inyectamos las credenciales de forma segura
+COPY .env.docker .env
+
+RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm exec vite build
+
+# ─── Stage 2: Production (nginx) ──────────────────────────────────────────────
+FROM nginx:stable-alpine AS production
+
+COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
+
+# La imagen de Nginx procesará automáticamente los templates puestos en esta carpeta
+COPY ./default.conf.template /etc/nginx/templates/default.conf.template
+
+# Puerto por defecto para Docker local (Heroku lo sobrescribirá)
+ENV PORT=80
+EXPOSE 80
+
+# Usamos el comando nativo de Nginx
+CMD ["nginx", "-g", "daemon off;"]
 ```
 
 ---
 
-## 🐳 2. Despliegue con Docker (Producción local)
+## 2. Flujo de Automatización del IDE (Git + Despliegue)
 
-> ⚠️ **Importante**: Las credenciales de Supabase (`VITE_SUPABASE_*`) son
-> variables de Vite que se **incrustan en el bundle en tiempo de compilación**.
-> Por eso DEBEN pasarse como `--build-arg` al construir la imagen, no como `-e`
-> al ejecutar el contenedor.
->
-> 💡 **Nota sobre `.dockerignore`**: Es fundamental que `node_modules` esté
-> descomentado en el archivo `.dockerignore` para evitar que la carpeta local de la máquina
-> host (Windows) sobrescriba la carpeta `node_modules` construida para Linux Alpine dentro del contenedor,
-> lo que de lo contrario causará errores del tipo `ERR_MODULE_NOT_FOUND` al ejecutar Vite.
+Para simplificar las tareas repetitivas, puedes integrar una secuencia única en la terminal integrada de tu IDE (VS Code, Cursor, etc.) o configurar un script personalizado.
 
-### Paso 2.1 — Construir la imagen
-
+### Paso A: Corregir Estilo y Commitear en Git
+Antes del commit, ejecuta el linter para corregir de forma automática los detalles de formato y evitar que fallen los hooks de Husky:
 ```bash
-# Windows (PowerShell)
-docker build `
-  --build-arg VITE_SUPABASE_URL="https://tu-proyecto.supabase.co" `
-  --build-arg VITE_SUPABASE_ANON_KEY="tu-anon-key" `
-  --build-arg VITE_DISABLE_ANALYTICS=true `
-  -t chatdb:latest .
-
-# Linux / Mac
-docker build \
-  --build-arg VITE_SUPABASE_URL="https://tu-proyecto.supabase.co" \
-  --build-arg VITE_SUPABASE_ANON_KEY="tu-anon-key" \
-  --build-arg VITE_DISABLE_ANALYTICS=true \
-  -t chatdb:latest .
+pnpm run lint:fix
+git add .
+git commit -m "chore: simplificacion de arquitectura docker y remocion de entrypoint"
+git push origin main
 ```
 
-### Paso 2.2 — Ejecutar el contenedor
-```bash
-docker run -d --name chatdb -p 8080:80 chatdb:latest
-```
-Accede en: **http://localhost:8080**
+### Paso B: Despliegue en Heroku Container Registry
+Al haber unificado las variables dentro de `.env.docker`, ya no es necesario escapar cadenas largas de caracteres especiales de Supabase en la consola.
 
-### Gestión del contenedor
+#### 1. Construir la imagen con compatibilidad para Heroku Registry:
 ```bash
-docker stop chatdb       # Detener
-docker start chatdb      # Reanudar
-docker rm chatdb         # Eliminar contenedor
-docker rmi chatdb:latest # Eliminar imagen
-docker logs -f chatdb    # Ver logs
+docker buildx build --provenance=false --load --no-cache -t registry.heroku.com/chatdb-alber/web .
 ```
 
----
-
-## ☁️ 3. Despliegue en Heroku
-
-### App activa
-- **URL**: https://chatdb-alber-060263da84d8.herokuapp.com/
-- **Nombre app**: `chatdb-alber`
-- **Stack**: `container` (Docker)
-- **Dyno**: `Basic` (web.1)
-
-### Paso 3.1 — Login en Heroku y Container Registry
-```bash
-heroku login
-heroku container:login
-```
-
-### Paso 3.2 — Build y Push de la imagen a Heroku
-
-> ⚠️ **Error de API Key / Heroku Registry**: 
-> 1. Puesto que la clave de Supabase (`anon_key`) es un JWT largo con caracteres especiales, el comando `heroku container:push --arg` puede truncar o fallar al parsear la cadena completa en la CLI de Heroku.
-> 2. Las versiones modernas de Docker Desktop generan por defecto manifiestos en formato OCI (con procedencia/atestación) que Heroku Registry rechaza con un error `error from registry: unsupported`.
->
-> Para solucionar ambos problemas, se debe construir la imagen usando `docker buildx` con el flag `--provenance=false` para la compatibilidad del registro y taggear la imagen para el registro de Heroku directamente.
-
-#### Comando de Construcción Compatible (Local):
-```bash
-# Windows (PowerShell)
-docker buildx build --provenance=false --load --no-cache `
-  --build-arg VITE_SUPABASE_URL="https://yburqxpgzcymdyolbiqg.supabase.co" `
-  --build-arg "VITE_SUPABASE_ANON_KEY=tu-anon-key-de-supabase" `
-  --build-arg VITE_DISABLE_ANALYTICS=true `
-  -t registry.heroku.com/chatdb-alber/web .
-
-# Linux / Mac
-docker buildx build --provenance=false --load --no-cache \
-  --build-arg VITE_SUPABASE_URL="https://yburqxpgzcymdyolbiqg.supabase.co" \
-  --build-arg "VITE_SUPABASE_ANON_KEY=tu-anon-key-de-supabase" \
-  --build-arg VITE_DISABLE_ANALYTICS=true \
-  -t registry.heroku.com/chatdb-alber/web .
-```
-
-#### Comando de Push:
+#### 2. Subir imagen al registro:
 ```bash
 docker push registry.heroku.com/chatdb-alber/web
 ```
 
-### Paso 3.3 — Release (activar la imagen en producción)
+#### 3. Publicar la versión en Heroku:
 ```bash
 heroku container:release web --app chatdb-alber
 ```
 
-### Paso 3.4 — Verificar estado del dyno
-```bash
-heroku ps --app chatdb-alber
-# web.1: up (dyno activo)
-
-heroku logs --tail --app chatdb-alber
-```
-
-### Paso 3.5 — Abrir la app
-```bash
-heroku open --app chatdb-alber
-```
-
 ---
 
-## 🔄 Redeploy tras Cambios en el Código
+## 3. Comandos de Gestión Rápida
 
-```bash
-# 1. Rebuild y push
-heroku container:push web --app chatdb-alber --arg VITE_SUPABASE_URL=https://yburqxpgzcymdyolbiqg.supabase.co,VITE_SUPABASE_ANON_KEY=TU_ANON_KEY,VITE_DISABLE_ANALYTICS=true
-
-# 2. Release
-heroku container:release web --app chatdb-alber
-```
-
----
-
-## 💰 Costos Heroku
-
-| Dyno   | Precio/mes | RAM    |
-|--------|-----------|--------|
-| Basic  | $7        | 512 MB |
-
-El plan Basic es suficiente ya que toda la lógica corre en el navegador del usuario.
-
----
-
-## 🔒 Notas de Seguridad
-
-- Las variables `VITE_*` son **públicas** una vez compiladas. La `anon key` de Supabase
-  es segura por diseño — es una clave pública con permisos limitados por Row Level Security (RLS).
-- Nunca subas `.env.local` al repositorio (ya está en `.gitignore`).
+| Entorno Objetivo | Técnico / Acción | Comando Ejecutable |
+| :--- | :--- | :--- |
+| **Linter** | Corregir estilo automático | `pnpm run lint:fix` |
+| **Docker Local** | Construcción limpia | `docker build --no-cache -t chatdb:latest .` |
+| **Docker Local** | Levantar contenedor | `docker run -d --name chatdb -p 8080:80 chatdb:latest` |
+| **Heroku** | Monitorear logs en vivo | `heroku logs --tail --app chatdb-alber` |

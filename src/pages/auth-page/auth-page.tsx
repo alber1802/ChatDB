@@ -14,7 +14,40 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/card/card';
-import { KeyRound, Mail, Lock, LogIn, UserPlus } from 'lucide-react';
+import {
+    KeyRound,
+    Mail,
+    Lock,
+    LogIn,
+    UserPlus,
+    CheckCircle,
+    ArrowLeft,
+} from 'lucide-react';
+
+const translateAuthError = (message: string): string => {
+    if (message.includes('Invalid login credentials')) {
+        return 'Correo o contraseña incorrectos. Verifica tus datos e intenta de nuevo.';
+    }
+    if (message.includes('Email not confirmed')) {
+        return 'Tu correo aún no ha sido verificado. Revisa tu bandeja de entrada y haz clic en el enlace de confirmación.';
+    }
+    if (message.includes('User already registered')) {
+        return 'Ya existe una cuenta con este correo. Intenta iniciar sesión.';
+    }
+    if (message.includes('Password should be at least')) {
+        return 'La contraseña debe tener al menos 6 caracteres.';
+    }
+    if (message.includes('Unable to validate email address')) {
+        return 'El formato del correo electrónico no es válido.';
+    }
+    if (message.includes('Email rate limit exceeded')) {
+        return 'Demasiados intentos. Espera unos minutos antes de intentarlo de nuevo.';
+    }
+    if (message.includes('signup_disabled')) {
+        return 'El registro de nuevos usuarios está temporalmente deshabilitado.';
+    }
+    return message;
+};
 
 export const AuthPage: React.FC = () => {
     const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -22,6 +55,7 @@ export const AuthPage: React.FC = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
     const { signIn, signUp } = useAuth();
     const navigate = useNavigate();
 
@@ -31,24 +65,20 @@ export const AuthPage: React.FC = () => {
         setError('');
 
         try {
-            const { error: authError } =
-                mode === 'login'
-                    ? await signIn(email, password)
-                    : await signUp(email, password);
-
-            if (authError) {
-                setError(authError.message);
-            } else {
-                if (mode === 'register') {
-                    // Si se registra, inicia sesión inmediatamente
-                    const { error: loginError } = await signIn(email, password);
-                    if (loginError) {
-                        setError(loginError.message);
-                    } else {
-                        navigate('/');
-                    }
+            if (mode === 'login') {
+                const { error: authError } = await signIn(email, password);
+                if (authError) {
+                    setError(translateAuthError(authError.message));
                 } else {
                     navigate('/');
+                }
+            } else {
+                const { error: authError } = await signUp(email, password);
+                if (authError) {
+                    setError(translateAuthError(authError.message));
+                } else {
+                    // Registro exitoso: mostrar pantalla de verificación de email
+                    setEmailSent(true);
                 }
             }
         } catch (err: any) {
@@ -58,6 +88,83 @@ export const AuthPage: React.FC = () => {
         }
     };
 
+    // ─── Pantalla de confirmación post-registro ────────────────────────────────
+    if (emailSent) {
+        return (
+            <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#090b10] px-4 py-12 text-[#f3f4f6]">
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute -left-40 -top-40 h-[600px] w-[600px] rounded-full bg-blue-600/10 blur-[120px]" />
+                    <div className="absolute -bottom-40 -right-40 h-[600px] w-[600px] rounded-full bg-emerald-600/10 blur-[120px]" />
+                </div>
+
+                <div className="relative z-10 w-full max-w-md">
+                    <Card className="border border-slate-800 bg-slate-900/60 shadow-2xl backdrop-blur-md">
+                        <CardContent className="pb-8 pt-10">
+                            <div className="flex flex-col items-center space-y-5 text-center">
+                                {/* Icono animado */}
+                                <div className="flex size-16 items-center justify-center rounded-full bg-emerald-500/10 ring-4 ring-emerald-500/20">
+                                    <CheckCircle className="size-9 text-emerald-400" />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <h2 className="text-2xl font-bold text-white">
+                                        ¡Revisa tu correo!
+                                    </h2>
+                                    <p className="text-sm leading-relaxed text-slate-400">
+                                        Hemos enviado un enlace de verificación
+                                        a:
+                                    </p>
+                                    <p className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-300">
+                                        {email}
+                                    </p>
+                                    <p className="text-sm leading-relaxed text-slate-400">
+                                        Haz clic en el enlace del correo para
+                                        activar tu cuenta y poder iniciar
+                                        sesión.
+                                    </p>
+                                </div>
+
+                                <div className="w-full space-y-3 pt-2">
+                                    <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-left">
+                                        <p className="text-xs text-amber-400">
+                                            <span className="font-semibold">
+                                                💡 ¿No lo ves?
+                                            </span>{' '}
+                                            Revisa tu carpeta de{' '}
+                                            <span className="font-semibold">
+                                                Spam
+                                            </span>{' '}
+                                            o{' '}
+                                            <span className="font-semibold">
+                                                Correo no deseado
+                                            </span>
+                                            .
+                                        </p>
+                                    </div>
+
+                                    <Button
+                                        type="button"
+                                        onClick={() => {
+                                            setEmailSent(false);
+                                            setMode('login');
+                                            setPassword('');
+                                            setError('');
+                                        }}
+                                        className="w-full border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+                                    >
+                                        <ArrowLeft className="mr-2 size-4" />
+                                        Volver al inicio de sesión
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
+    // ─── Pantalla de Login / Registro ─────────────────────────────────────────
     return (
         <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#090b10] px-4 py-12 text-[#f3f4f6]">
             {/* Background dynamic radial gradients */}
@@ -85,14 +192,18 @@ export const AuthPage: React.FC = () => {
                             ¡Bienvenido!
                         </CardTitle>
                         <CardDescription className="text-center text-slate-400">
-                            Ingresa tus credenciales para acceder a tus
-                            diagramas
+                            {mode === 'login'
+                                ? 'Ingresa tus credenciales para acceder a tus diagramas'
+                                : 'Crea tu cuenta para guardar tus diagramas en la nube'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Tabs
                             defaultValue={mode}
-                            onValueChange={(val) => setMode(val as any)}
+                            onValueChange={(val) => {
+                                setMode(val as any);
+                                setError('');
+                            }}
                             className="w-full"
                         >
                             <TabsList className="grid w-full grid-cols-2 rounded-lg border border-slate-800 bg-slate-950 p-1">
@@ -143,6 +254,11 @@ export const AuthPage: React.FC = () => {
                                         className="text-slate-300"
                                     >
                                         Contraseña
+                                        {mode === 'register' && (
+                                            <span className="ml-2 text-xs text-slate-500">
+                                                (mínimo 6 caracteres)
+                                            </span>
+                                        )}
                                     </Label>
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
@@ -155,6 +271,7 @@ export const AuthPage: React.FC = () => {
                                                 setPassword(e.target.value)
                                             }
                                             required
+                                            minLength={6}
                                             className="border-slate-800 bg-slate-950 pl-10 text-white placeholder-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                         />
                                     </div>
@@ -163,6 +280,14 @@ export const AuthPage: React.FC = () => {
                                 {error && (
                                     <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
                                         {error}
+                                    </div>
+                                )}
+
+                                {mode === 'register' && !error && (
+                                    <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-slate-400">
+                                        📧 Después de registrarte, recibirás un
+                                        correo de verificación para activar tu
+                                        cuenta.
                                     </div>
                                 )}
 
@@ -183,7 +308,7 @@ export const AuthPage: React.FC = () => {
                                     ) : (
                                         <span className="flex items-center justify-center gap-2">
                                             <UserPlus className="size-4" />{' '}
-                                            Registrarse
+                                            Crear Cuenta
                                         </span>
                                     )}
                                 </Button>
