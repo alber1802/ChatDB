@@ -19,18 +19,7 @@ import {
 } from '@/components/select/select';
 import { Input } from '@/components/input/input';
 import { useAuth } from '@/context/auth-context/auth-context';
-
-interface AdminUserProfile {
-    id: string;
-    email: string;
-    email_confirmed_at: string | null;
-    last_sign_in_at: string | null;
-    display_name: string | null;
-    avatar_url: string | null;
-    role_id: string;
-    created_at: string;
-    updated_at: string;
-}
+import type { AdminUserProfile } from '../_types/admin.types';
 
 interface UserEditDialogProps {
     user: AdminUserProfile | null;

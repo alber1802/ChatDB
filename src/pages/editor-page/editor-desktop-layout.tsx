@@ -47,17 +47,22 @@ export const EditorDesktopLayout: React.FC<EditorDesktopLayoutProps> = ({
                         className={!isSidePanelShowed ? 'hidden' : ''}
                     />
                     <ResizablePanel defaultSize={75}>
-                        <div className="relative h-full w-full">
+                        <div className="relative size-full">
                             <button
                                 onClick={toggleSidePanel}
                                 className={cn(
-                                    "absolute left-3 top-1/2 z-50 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-md hover:bg-accent hover:text-accent-foreground transition-all duration-200 focus:outline-none cursor-pointer hover:scale-110",
+                                    'absolute left-3 top-1/2 z-50 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-md hover:bg-accent hover:text-accent-foreground transition-all duration-200 focus:outline-none cursor-pointer hover:scale-110',
                                     {
-                                        "opacity-80 hover:opacity-100": isSidePanelShowed,
-                                        "opacity-100": !isSidePanelShowed
+                                        'opacity-80 hover:opacity-100':
+                                            isSidePanelShowed,
+                                        'opacity-100': !isSidePanelShowed,
                                     }
                                 )}
-                                title={isSidePanelShowed ? "Ocultar panel lateral" : "Mostrar panel lateral"}
+                                title={
+                                    isSidePanelShowed
+                                        ? 'Ocultar panel lateral'
+                                        : 'Mostrar panel lateral'
+                                }
                             >
                                 {isSidePanelShowed ? (
                                     <ChevronLeft className="size-3.5" />
@@ -65,7 +70,9 @@ export const EditorDesktopLayout: React.FC<EditorDesktopLayoutProps> = ({
                                     <ChevronRight className="size-3.5" />
                                 )}
                             </button>
-                            <Canvas initialTables={initialDiagram?.tables ?? []} />
+                            <Canvas
+                                initialTables={initialDiagram?.tables ?? []}
+                            />
                         </div>
                     </ResizablePanel>
                 </ResizablePanelGroup>
@@ -75,4 +82,3 @@ export const EditorDesktopLayout: React.FC<EditorDesktopLayoutProps> = ({
 };
 
 export default EditorDesktopLayout;
-

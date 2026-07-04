@@ -29,7 +29,7 @@ import { useLocalConfig } from '@/hooks/use-local-config';
 import { useNavigate } from 'react-router-dom';
 import { useAlert } from '@/context/alert-context/alert-context';
 
-export interface MenuProps { }
+export interface MenuProps {}
 
 export const Menu: React.FC<MenuProps> = () => {
     const {
@@ -99,14 +99,6 @@ export const Menu: React.FC<MenuProps> = () => {
             format: 'jpeg',
         });
     }, [openExportImageDialog]);
-
-    const openChartDBDocs = useCallback(() => {
-        window.open('https://docs.chartdb.io', '_blank');
-    }, []);
-
-    const openJoinDiscord = useCallback(() => {
-        window.open('https://discord.gg/QeFwyWSKwC', '_blank');
-    }, []);
 
     const exportSQL = useCallback(
         (databaseType: DatabaseType) => {

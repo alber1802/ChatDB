@@ -1,39 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/table/table';
 import { Card, CardContent, CardHeader } from '@/components/card/card';
 import { Input } from '@/components/input/input';
-import { Button } from '@/components/button/button';
-import { Spinner } from '@/components/spinner/spinner';
-import { Edit2, Trash2, Search, CheckCircle, XCircle } from 'lucide-react';
+import { Skeleton } from '@/components/skeleton/skeleton';
+import { Search } from 'lucide-react';
 import { useAuth } from '@/context/auth-context/auth-context';
 import { UserEditDialog } from './user-edit-dialog';
+import { UsersTable } from './users-table';
 import { useAlert } from '@/context/alert-context/alert-context';
-
-interface AdminUserProfile {
-    id: string;
-    email: string;
-    email_confirmed_at: string | null;
-    last_sign_in_at: string | null;
-    display_name: string | null;
-    avatar_url: string | null;
-    role_id: string;
-    created_at: string;
-    updated_at: string;
-}
+import { useAdminUsers } from '../_hooks/use-admin-users';
+import type { AdminUserProfile } from '../_types/admin.types';
 
 export const UsersList: React.FC = () => {
     const { role: currentUserRole } = useAuth();
     const { showAlert } = useAlert();
-    const [loading, setLoading] = useState(true);
-    const [users, setUsers] = useState<AdminUserProfile[]>([]);
+    const { users, loading, refetch } = useAdminUsers();
     const [filteredUsers, setFilteredUsers] = useState<AdminUserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -42,25 +23,6 @@ export const UsersList: React.FC = () => {
         null
     );
     const [isEditOpen, setIsEditOpen] = useState(false);
-
-    const fetchUsers = async () => {
-        try {
-            setLoading(true);
-            const { data, error } = await supabase.rpc('get_admin_users');
-            if (error) throw error;
-            const usersList = (data || []) as AdminUserProfile[];
-            setUsers(usersList);
-            setFilteredUsers(usersList);
-        } catch (err) {
-            console.error('Error fetching users:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
 
     useEffect(() => {
         const term = searchTerm.toLowerCase().trim();
@@ -113,7 +75,7 @@ export const UsersList: React.FC = () => {
                         target_user_id: user.id,
                     });
                     if (error) throw error;
-                    fetchUsers();
+                    refetch();
                 } catch (err: unknown) {
                     console.error('Error deleting user:', err);
                     const errMsg =
@@ -130,23 +92,15 @@ export const UsersList: React.FC = () => {
         });
     };
 
-    if (loading) {
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Spinner size="large" className="text-primary" />
-            </div>
-        );
-    }
-
     return (
-        <div className="flex flex-col gap-y-6 font-primary">
+        <div className="flex select-none flex-col gap-y-6 font-primary">
             {/* Header */}
             <div className="flex flex-col justify-between gap-y-4 sm:flex-row sm:items-center">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">
+                    <h2 className="text-2xl font-bold tracking-tight text-foreground">
                         Gestión de Usuarios
                     </h2>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="mt-1 text-sm text-muted-foreground">
                         Administra perfiles de usuario, edita roles y gestiona
                         accesos.
                     </p>
@@ -167,141 +121,22 @@ export const UsersList: React.FC = () => {
                             />
                         </div>
                         <div className="text-xs text-muted-foreground">
-                            Mostrando {filteredUsers.length} de {users.length}{' '}
-                            usuarios
+                            {loading ? (
+                                <Skeleton className="h-4 w-32 bg-muted" />
+                            ) : (
+                                `Mostrando ${filteredUsers.length} de ${users.length} usuarios`
+                            )}
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="pl-6">
-                                        Usuario
-                                    </TableHead>
-                                    <TableHead>Nombre</TableHead>
-                                    <TableHead>Rol</TableHead>
-                                    <TableHead>Verificado</TableHead>
-                                    <TableHead>Última Conexión</TableHead>
-                                    <TableHead className="pr-6 text-right">
-                                        Acciones
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredUsers.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={6}
-                                            className="py-8 text-center text-muted-foreground"
-                                        >
-                                            No se encontraron usuarios
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filteredUsers.map((user) => (
-                                        <TableRow key={user.id}>
-                                            <TableCell
-                                                className="max-w-[200px] truncate pl-6 font-medium"
-                                                title={user.email}
-                                            >
-                                                {user.email}
-                                            </TableCell>
-                                            <TableCell className="max-w-[150px] truncate">
-                                                {user.display_name || '-'}
-                                            </TableCell>
-                                            <TableCell>
-                                                <span
-                                                    className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${
-                                                        user.role_id ===
-                                                        'super_admin'
-                                                            ? 'bg-red-500/10 text-red-500'
-                                                            : user.role_id ===
-                                                                'admin'
-                                                              ? 'bg-blue-500/10 text-blue-500'
-                                                              : 'bg-green-500/10 text-green-500'
-                                                    }`}
-                                                >
-                                                    {user.role_id ===
-                                                    'super_admin'
-                                                        ? 'Super Admin'
-                                                        : user.role_id ===
-                                                            'admin'
-                                                          ? 'Admin'
-                                                          : 'User'}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell>
-                                                {user.email_confirmed_at ? (
-                                                    <div className="flex items-center gap-x-1.5 text-xs text-emerald-500">
-                                                        <CheckCircle className="size-4" />
-                                                        <span>Sí</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-x-1.5 text-xs text-amber-500">
-                                                        <XCircle className="size-4" />
-                                                        <span>No</span>
-                                                    </div>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-sm text-muted-foreground">
-                                                {user.last_sign_in_at
-                                                    ? new Date(
-                                                          user.last_sign_in_at
-                                                      ).toLocaleDateString() +
-                                                      ' ' +
-                                                      new Date(
-                                                          user.last_sign_in_at
-                                                      ).toLocaleTimeString([], {
-                                                          hour: '2-digit',
-                                                          minute: '2-digit',
-                                                      })
-                                                    : 'Nunca'}
-                                            </TableCell>
-                                            <TableCell className="pr-6 text-right">
-                                                <div className="flex justify-end gap-x-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() =>
-                                                            handleEditClick(
-                                                                user
-                                                            )
-                                                        }
-                                                        title="Editar Usuario"
-                                                        className="hover:bg-muted"
-                                                    >
-                                                        <Edit2 className="size-4" />
-                                                    </Button>
-                                                    {currentUserRole ===
-                                                        'super_admin' && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                handleDeleteClick(
-                                                                    user
-                                                                )
-                                                            }
-                                                            title="Eliminar Datos de Usuario"
-                                                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                                            disabled={
-                                                                user.role_id ===
-                                                                'super_admin'
-                                                            }
-                                                        >
-                                                            <Trash2 className="size-4" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <UsersTable
+                        users={filteredUsers}
+                        loading={loading}
+                        currentUserRole={currentUserRole}
+                        onEdit={handleEditClick}
+                        onDelete={handleDeleteClick}
+                    />
                 </CardContent>
             </Card>
 
@@ -310,7 +145,7 @@ export const UsersList: React.FC = () => {
                 user={selectedUser}
                 open={isEditOpen}
                 onOpenChange={setIsEditOpen}
-                onSuccess={fetchUsers}
+                onSuccess={refetch}
             />
         </div>
     );

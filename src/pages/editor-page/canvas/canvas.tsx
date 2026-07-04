@@ -421,28 +421,35 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                     filterTable({
                         table: { id: table.id, schema: table.schema },
                         filter,
-                        options: { defaultSchema: defaultSchemas[databaseType] },
+                        options: {
+                            defaultSchema: defaultSchemas[databaseType],
+                        },
                     }) &&
                     (showDBViews ? true : !table.isView)
                 );
             };
 
             const visibleRelationships = relationships.filter(
-                (r) => isTableVisible(r.sourceTableId) && isTableVisible(r.targetTableId)
+                (r) =>
+                    isTableVisible(r.sourceTableId) &&
+                    isTableVisible(r.targetTableId)
             );
             const visibleDependencies = dependencies.filter(
-                (d) => isTableVisible(d.dependentTableId) && isTableVisible(d.tableId)
+                (d) =>
+                    isTableVisible(d.dependentTableId) &&
+                    isTableVisible(d.tableId)
             );
 
-            const targetIndexes: Record<string, number> = visibleRelationships.reduce(
-                (acc, relationship) => {
-                    acc[
-                        `${relationship.targetTableId}${relationship.targetFieldId}`
-                    ] = 0;
-                    return acc;
-                },
-                {} as Record<string, number>
-            );
+            const targetIndexes: Record<string, number> =
+                visibleRelationships.reduce(
+                    (acc, relationship) => {
+                        acc[
+                            `${relationship.targetTableId}${relationship.targetFieldId}`
+                        ] = 0;
+                        return acc;
+                    },
+                    {} as Record<string, number>
+                );
 
             const targetDepIndexes: Record<string, number> =
                 visibleDependencies.reduce(
