@@ -3,6 +3,7 @@ import type { LanguageMetadata, LanguageTranslation } from '../types';
 export const es: LanguageTranslation = {
     translation: {
         editor_sidebar: {
+            dashboard: 'Dashboard',
             new_diagram: 'Nuevo',
             browse: 'Abrir',
             tables: 'Tablas',

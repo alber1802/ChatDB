@@ -17,8 +17,10 @@ import {
     Plus,
     FolderOpen,
     CodeXml,
+    LayoutDashboard,
 } from 'lucide-react';
 import { Table, Workflow } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useLayout } from '@/hooks/use-layout';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
@@ -41,6 +43,7 @@ export interface SidebarItem {
 export interface EditorSidebarProps {}
 
 export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
+    const navigate = useNavigate();
     const {
         selectSidebarSection,
         selectedSidebarSection,
@@ -55,6 +58,14 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
 
     const diagramItems: SidebarItem[] = useMemo(
         () => [
+            {
+                title: t('editor_sidebar.dashboard', 'Dashboard'),
+                icon: LayoutDashboard,
+                onClick: () => {
+                    navigate('/');
+                },
+                active: false,
+            },
             {
                 title: t('editor_sidebar.new_diagram'),
                 icon: Plus,
@@ -72,7 +83,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                 active: false,
             },
         ],
-        [t, openCreateDiagramDialog, openOpenDiagramDialog]
+        [t, openCreateDiagramDialog, openOpenDiagramDialog, navigate]
     );
 
     const baseItems: SidebarItem[] = useMemo(

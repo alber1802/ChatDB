@@ -26,8 +26,22 @@ const routes: RouteObject[] = [
                     };
                 },
             },
-            ...['', 'diagrams/:diagramId'].map((path) => ({
-                path,
+            {
+                path: '',
+                async lazy() {
+                    const { DiagramsDashboardPage } =
+                        await import('./pages/diagrams-dashboard/diagrams-dashboard');
+                    return {
+                        element: (
+                            <ProtectedRoute>
+                                <DiagramsDashboardPage />
+                            </ProtectedRoute>
+                        ),
+                    };
+                },
+            },
+            {
+                path: 'diagrams/:diagramId',
                 async lazy() {
                     const { EditorPage } =
                         await import('./pages/editor-page/editor-page');
@@ -40,7 +54,7 @@ const routes: RouteObject[] = [
                         ),
                     };
                 },
-            })),
+            },
             {
                 path: 'examples',
                 async lazy() {

@@ -3,6 +3,7 @@ import type { LanguageMetadata } from '../types';
 export const en = {
     translation: {
         editor_sidebar: {
+            dashboard: 'Dashboard',
             new_diagram: 'New',
             browse: 'Open',
             tables: 'Tables',

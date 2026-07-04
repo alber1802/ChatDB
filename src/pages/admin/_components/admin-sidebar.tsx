@@ -133,7 +133,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     className="flex w-full cursor-pointer justify-start gap-x-3 rounded-lg py-2.5 text-sm text-muted-foreground hover:text-foreground"
                 >
                     <ArrowLeft className="size-4 shrink-0" />
-                    <span>Volver al Editor</span>
+                    <span>Volver al Dashboard</span>
                 </Button>
                 <Button
                     variant="ghost"
