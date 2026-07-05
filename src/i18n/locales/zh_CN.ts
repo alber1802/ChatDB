@@ -3,6 +3,7 @@ import type { LanguageMetadata, LanguageTranslation } from '../types';
 export const zh_CN: LanguageTranslation = {
     translation: {
         editor_sidebar: {
+            dashboard: '控制台',
             new_diagram: '新建',
             browse: '打开',
             tables: '表',

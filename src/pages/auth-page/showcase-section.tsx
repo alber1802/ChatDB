@@ -24,8 +24,8 @@ export const ShowcaseSection: React.FC = () => {
                 </h2>
                 <p className="max-w-lg leading-relaxed text-slate-300">
                     Dibuja tus diagramas de relación de bases de datos,
-                    visualiza esquemas mediante queries SQL y exporta
-                    scripts DDL de forma interactiva y segura.
+                    visualiza esquemas mediante queries SQL y exporta scripts
+                    DDL de forma interactiva y segura.
                 </p>
             </motion.div>
 

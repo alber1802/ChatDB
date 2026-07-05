@@ -16,6 +16,7 @@ import { noteSchema } from './note';
 export interface Diagram {
     id: string;
     name: string;
+    description?: string;
     databaseType: DatabaseType;
     databaseEdition?: DatabaseEdition;
     tables?: DBTable[];
@@ -31,6 +32,7 @@ export interface Diagram {
 export const diagramSchema: z.ZodType<Diagram> = z.object({
     id: z.string(),
     name: z.string(),
+    description: z.string().optional(),
     databaseType: z.nativeEnum(DatabaseType),
     databaseEdition: z.nativeEnum(DatabaseEdition).optional(),
     tables: z.array(dbTableSchema).optional(),

@@ -3,6 +3,7 @@ import type { LanguageMetadata, LanguageTranslation } from '../types';
 export const vi: LanguageTranslation = {
     translation: {
         editor_sidebar: {
+            dashboard: 'Bảng điều khiển',
             new_diagram: 'Mới',
             browse: 'Mở',
             tables: 'Bảng',

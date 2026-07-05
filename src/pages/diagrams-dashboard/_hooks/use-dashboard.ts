@@ -4,7 +4,8 @@ import { cloneDiagram } from '@/lib/clone';
 import type { Diagram } from '@/lib/domain/diagram';
 
 export const useDashboard = () => {
-    const { listDiagrams, deleteDiagram, updateDiagram, addDiagram } = useStorage();
+    const { listDiagrams, deleteDiagram, updateDiagram, addDiagram } =
+        useStorage();
     const [diagrams, setDiagrams] = useState<Diagram[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | null>(null);
@@ -16,12 +17,18 @@ export const useDashboard = () => {
             const data = await listDiagrams({ includeTables: true });
             // Sort by updatedAt descending
             const sorted = [...data].sort(
-                (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+                (a, b) =>
+                    new Date(b.updatedAt).getTime() -
+                    new Date(a.updatedAt).getTime()
             );
             setDiagrams(sorted);
         } catch (err) {
             console.error('Error fetching diagrams:', err);
-            setError(err instanceof Error ? err : new Error('Error al listar diagramas'));
+            setError(
+                err instanceof Error
+                    ? err
+                    : new Error('Error al listar diagramas')
+            );
         } finally {
             setLoading(false);
         }
@@ -60,7 +67,7 @@ export const useDashboard = () => {
                 const cloned = cloneDiagram(diagram);
                 const diagramToAdd = cloned.diagram;
                 if (!diagramToAdd) return;
-                
+
                 diagramToAdd.name = `${diagram.name} (Copia)`;
                 await addDiagram({ diagram: diagramToAdd });
                 await fetchDiagrams();

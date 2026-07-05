@@ -15,7 +15,7 @@ export const AdminMobileSheet: React.FC<AdminMobileSheetProps> = ({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
                 side="left"
-                className="w-64 border-r border-border/40 p-0"
+                className="w-64 border-r border-border/30 bg-card/85 p-0 backdrop-blur-lg"
             >
                 <AdminSidebar onCloseMobile={() => onOpenChange(false)} />
             </SheetContent>

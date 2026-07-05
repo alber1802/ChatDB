@@ -116,10 +116,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({
                                 </TabsTrigger>
                             </TabsList>
 
-                            <form
-                                onSubmit={handleSubmit}
-                                className="mt-6"
-                            >
+                            <form onSubmit={handleSubmit} className="mt-6">
                                 <motion.div
                                     key={mode}
                                     initial={{ opacity: 0, y: 10 }}
@@ -216,10 +213,9 @@ export const AuthCard: React.FC<AuthCardProps> = ({
 
                                     {mode === 'register' && !error && (
                                         <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-[11px] leading-relaxed text-slate-400">
-                                            📧 Después de registrarte,
-                                            recibirás un correo de
-                                            verificación para activar tu
-                                            cuenta.
+                                            📧 Después de registrarte, recibirás
+                                            un correo de verificación para
+                                            activar tu cuenta.
                                         </div>
                                     )}
 

@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/card/card';
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+} from '@/components/card/card';
 import { Button } from '@/components/button/button';
 import { DiagramIcon } from '@/components/diagram-icon/diagram-icon';
 import {
@@ -20,7 +25,15 @@ import {
     AlertDialogTitle,
 } from '@/components/alert-dialog/alert-dialog';
 import { RenameDiagramDialog } from './rename-diagram-dialog';
-import { MoreVertical, Calendar, Table2, Trash2, Edit, Copy, ExternalLink } from 'lucide-react';
+import {
+    MoreVertical,
+    Calendar,
+    Table2,
+    Trash2,
+    Edit,
+    Copy,
+    ExternalLink,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Diagram } from '@/lib/domain/diagram';
 
@@ -45,33 +58,42 @@ export const DiagramCard: React.FC<DiagramCardProps> = ({
         navigate(`/diagrams/${diagram.id}`);
     };
 
-    const formattedDate = new Date(diagram.updatedAt).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
+    const formattedDate = new Date(diagram.updatedAt).toLocaleDateString(
+        undefined,
+        {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        }
+    );
 
     const tablesCount = diagram.tables?.length || 0;
 
     return (
         <>
-            <Card className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/50 bg-card hover:bg-accent/10 transition-all duration-300 hover:shadow-lg hover:border-primary/20 cursor-pointer" onClick={handleOpen}>
+            <Card
+                className="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-border/40 bg-card/50 shadow-sm backdrop-blur-md transition-all duration-300 hover:border-primary/30 hover:bg-card/85 hover:shadow-2xl"
+                onClick={handleOpen}
+            >
                 {/* Visual Glassmorphic Accent */}
-                <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary/40 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary/50 via-primary/25 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 p-5 pb-3">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-11 items-center justify-center rounded-lg border border-border/60 bg-muted/30 group-hover:bg-primary/5 group-hover:border-primary/15 transition-colors duration-300">
+                        <div className="flex size-11 items-center justify-center rounded-lg border border-border/60 bg-muted/30 transition-colors duration-300 group-hover:border-primary/15 group-hover:bg-primary/5">
                             <DiagramIcon
                                 databaseType={diagram.databaseType}
                                 databaseEdition={diagram.databaseEdition}
                             />
                         </div>
                         <div className="space-y-0.5">
-                            <h3 className="font-semibold text-sm tracking-tight text-foreground group-hover:text-primary transition-colors duration-200 truncate max-w-[150px] sm:max-w-[200px]" title={diagram.name}>
+                            <h3
+                                className="max-w-[150px] truncate text-sm font-semibold tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary sm:max-w-[200px]"
+                                title={diagram.name}
+                            >
                                 {diagram.name}
                             </h3>
-                            <span className="inline-block rounded bg-muted/65 px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground uppercase">
+                            <span className="inline-block rounded bg-muted/65 px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase text-muted-foreground">
                                 {diagram.databaseType}
                             </span>
                         </div>
@@ -84,28 +106,37 @@ export const DiagramCard: React.FC<DiagramCardProps> = ({
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="size-8 cursor-pointer rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
+                                    className="size-8 cursor-pointer rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
                                 >
                                     <MoreVertical className="size-4" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-44">
-                                <DropdownMenuItem onClick={handleOpen} className="gap-2 cursor-pointer">
+                                <DropdownMenuItem
+                                    onClick={handleOpen}
+                                    className="cursor-pointer gap-2"
+                                >
                                     <ExternalLink className="size-3.5 text-muted-foreground" />
                                     Abrir Editor
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setIsRenameOpen(true)} className="gap-2 cursor-pointer">
+                                <DropdownMenuItem
+                                    onClick={() => setIsRenameOpen(true)}
+                                    className="cursor-pointer gap-2"
+                                >
                                     <Edit className="size-3.5 text-muted-foreground" />
                                     Renombrar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onDuplicate(diagram)} className="gap-2 cursor-pointer">
+                                <DropdownMenuItem
+                                    onClick={() => onDuplicate(diagram)}
+                                    className="cursor-pointer gap-2"
+                                >
                                     <Copy className="size-3.5 text-muted-foreground" />
                                     Duplicar
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                     onClick={() => setIsDeleteOpen(true)}
-                                    className="gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-500/10"
+                                    className="cursor-pointer gap-2 text-red-600 focus:bg-red-500/10 focus:text-red-600"
                                 >
                                     <Trash2 className="size-3.5" />
                                     Eliminar
@@ -115,9 +146,10 @@ export const DiagramCard: React.FC<DiagramCardProps> = ({
                     </div>
                 </CardHeader>
 
-                <CardContent className="p-5 pt-2 pb-4">
-                    <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">
-                        {diagram.description || 'Sin descripción. Modifica este diagrama para añadir tablas y configurar tu base de datos.'}
+                <CardContent className="p-5 pb-4 pt-2">
+                    <p className="line-clamp-2 min-h-[32px] text-xs text-muted-foreground">
+                        {diagram.description ||
+                            'Sin descripción. Modifica este diagrama para añadir tablas y configurar tu base de datos.'}
                     </p>
                 </CardContent>
 
@@ -125,7 +157,9 @@ export const DiagramCard: React.FC<DiagramCardProps> = ({
                     <div className="flex items-center gap-1.5">
                         <Table2 className="size-3.5 text-muted-foreground/70" />
                         <span>
-                            {tablesCount === 1 ? '1 tabla' : `${tablesCount} tablas`}
+                            {tablesCount === 1
+                                ? '1 tabla'
+                                : `${tablesCount} tablas`}
                         </span>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -147,13 +181,20 @@ export const DiagramCard: React.FC<DiagramCardProps> = ({
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>¿Estás seguro de eliminar este diagrama?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            ¿Estás seguro de eliminar este diagrama?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción eliminará de forma permanente el diagrama "{diagram.name}" y todos sus objetos relacionados (tablas, relaciones y notas). No se puede deshacer.
+                            Esta acción eliminará de forma permanente el
+                            diagrama "{diagram.name}" y todos sus objetos
+                            relacionados (tablas, relaciones y notas). No se
+                            puede deshacer.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setIsDeleteOpen(false)}>
+                        <AlertDialogCancel
+                            onClick={() => setIsDeleteOpen(false)}
+                        >
                             Cancelar
                         </AlertDialogCancel>
                         <AlertDialogAction

@@ -108,7 +108,7 @@ export const AuditLogs: React.FC = () => {
             </div>
 
             {/* Logs Table */}
-            <Card className="border border-border/40 shadow-sm">
+            <Card className="border border-border/30 bg-card/45 shadow-sm backdrop-blur-md">
                 <CardHeader className="pb-3">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="relative max-w-md flex-1">

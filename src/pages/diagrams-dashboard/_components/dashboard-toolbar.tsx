@@ -1,14 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/input/input';
 import { Button } from '@/components/button/button';
-import {
-    LayoutGrid,
-    List,
-    Plus,
-    Search,
-    Database,
-    X,
-} from 'lucide-react';
+import { LayoutGrid, List, Plus, Search, Database, X } from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -51,23 +44,23 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
     onCreateNew,
 }) => {
     return (
-        <div className="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between border-b border-border/20">
+        <div className="flex flex-col gap-4 rounded-2xl border border-border/30 bg-card/45 p-4 shadow-sm backdrop-blur-md md:flex-row md:items-center md:justify-between">
             {/* Left side: Search & Filter */}
             <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
                 {/* Search Input */}
-                <div className="relative flex-1 max-w-md">
+                <div className="relative max-w-md flex-1">
                     <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         type="text"
                         placeholder="Buscar diagramas por nombre..."
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="pl-9 pr-9 h-10 w-full"
+                        className="h-10 w-full px-9"
                     />
                     {searchQuery && (
                         <button
                             onClick={() => onSearchChange('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 hover:bg-muted text-muted-foreground transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted"
                         >
                             <X className="size-3" />
                         </button>
@@ -76,7 +69,10 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
 
                 {/* Database Type Filter */}
                 <div className="w-full sm:w-56">
-                    <Select value={selectedDBType} onValueChange={onDBTypeChange}>
+                    <Select
+                        value={selectedDBType}
+                        onValueChange={onDBTypeChange}
+                    >
                         <SelectTrigger className="h-10 w-full">
                             <span className="flex items-center gap-2">
                                 <Database className="size-4 text-muted-foreground" />
@@ -84,7 +80,9 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
                             </span>
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Todas las Bases de Datos</SelectItem>
+                            <SelectItem value="all">
+                                Todas las Bases de Datos
+                            </SelectItem>
                             {Object.values(DatabaseType).map((type) => (
                                 <SelectItem key={type} value={type}>
                                     {DB_LABELS[type] || type}
@@ -103,7 +101,7 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
                         variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
                         size="icon"
                         onClick={() => onViewModeChange('grid')}
-                        className={`size-8 p-0 rounded-md transition-all ${viewMode === 'grid' ? 'shadow-sm bg-background' : 'hover:bg-muted/50'}`}
+                        className={`size-8 rounded-md p-0 transition-all ${viewMode === 'grid' ? 'bg-background shadow-sm' : 'hover:bg-muted/50'}`}
                         title="Vista Cuadrícula"
                     >
                         <LayoutGrid className="size-4" />
@@ -112,7 +110,7 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
                         variant={viewMode === 'list' ? 'secondary' : 'ghost'}
                         size="icon"
                         onClick={() => onViewModeChange('list')}
-                        className={`size-8 p-0 rounded-md transition-all ${viewMode === 'list' ? 'shadow-sm bg-background' : 'hover:bg-muted/50'}`}
+                        className={`size-8 rounded-md p-0 transition-all ${viewMode === 'list' ? 'bg-background shadow-sm' : 'hover:bg-muted/50'}`}
                         title="Vista Lista"
                     >
                         <List className="size-4" />

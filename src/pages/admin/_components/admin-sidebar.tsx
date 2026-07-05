@@ -56,7 +56,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     };
 
     return (
-        <div className="flex h-full select-none flex-col justify-between border-r border-border/40 bg-card p-4 font-primary">
+        <div className="flex h-full select-none flex-col justify-between p-4 font-primary">
             <div className="flex flex-col gap-y-6">
                 {/* Logo Section */}
                 <div className="flex items-center justify-between p-2">
@@ -71,15 +71,15 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             className="h-5 max-w-fit cursor-pointer transition-opacity hover:opacity-85"
                             onClick={() => navigate('/')}
                         />
-                        <span className="rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                        <span className="rounded border border-primary/25 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
                             ADMIN
                         </span>
                     </div>
                 </div>
 
                 {/* User Profile Card */}
-                <div className="flex items-center gap-x-3 rounded-xl border border-border/40 bg-slate-900/10 p-3.5 shadow-sm transition-all duration-200 dark:bg-slate-900/50">
-                    <Avatar className="size-10 border border-border shadow-inner">
+                <div className="flex items-center gap-x-3 rounded-xl border border-border/30 bg-card/65 p-3.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-card/85">
+                    <Avatar className="size-10 border border-border/40 shadow-inner">
                         <AvatarImage src={profile?.avatar_url || ''} />
                         <AvatarFallback className="bg-primary/5 text-sm font-semibold text-primary">
                             {profile?.display_name
@@ -97,7 +97,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     </div>
                 </div>
 
-                <Separator className="bg-border/60" />
+                <Separator className="bg-border/30" />
 
                 {/* Navigation Links */}
                 <nav className="flex flex-col gap-y-1.5">
@@ -111,10 +111,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                                     navigate(item.path);
                                     if (onCloseMobile) onCloseMobile();
                                 }}
-                                className={`flex cursor-pointer items-center gap-x-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                                className={`flex cursor-pointer items-center gap-x-3 rounded-lg border px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                                     isActive
-                                        ? 'scale-[1.01] bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground active:scale-[0.99]'
+                                        ? 'scale-[1.01] border-primary/25 bg-primary/15 text-primary shadow-inner shadow-primary/5 backdrop-blur-sm'
+                                        : 'border-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground active:scale-[0.99]'
                                 }`}
                             >
                                 <Icon className="size-4 shrink-0" />
@@ -126,11 +126,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex flex-col gap-y-2 border-t border-border/40 pt-4">
+            <div className="flex flex-col gap-y-2 border-t border-border/30 pt-4">
                 <Button
                     variant="ghost"
                     onClick={() => navigate('/')}
-                    className="flex w-full cursor-pointer justify-start gap-x-3 rounded-lg py-2.5 text-sm text-muted-foreground hover:text-foreground"
+                    className="flex w-full cursor-pointer justify-start gap-x-3 rounded-lg py-2.5 text-sm text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                 >
                     <ArrowLeft className="size-4 shrink-0" />
                     <span>Volver al Dashboard</span>

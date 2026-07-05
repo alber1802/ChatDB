@@ -16,7 +16,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats, loading }) => {
                 {Array.from({ length: 4 }).map((_, i) => (
                     <div
                         key={i}
-                        className="space-y-3 rounded-xl border border-border/40 bg-card p-6 shadow-sm"
+                        className="space-y-3 rounded-xl border border-border/30 bg-card/45 p-6 shadow-sm backdrop-blur-md"
                     >
                         <div className="flex items-center justify-between">
                             <Skeleton className="h-4 w-28 bg-muted" />

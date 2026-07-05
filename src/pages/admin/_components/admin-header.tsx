@@ -74,7 +74,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ onOpenMobile }) => {
     const breadcrumbs = getBreadcrumbs();
 
     return (
-        <header className="flex h-16 select-none items-center justify-between border-b border-border/40 bg-card px-4 font-primary md:px-6">
+        <header className="sticky top-0 z-30 flex h-16 select-none items-center justify-between border-b border-border/30 bg-card/45 px-4 font-primary backdrop-blur-md md:px-6">
             <div className="flex items-center gap-x-4">
                 {/* Mobile Toggle Button */}
                 <Button

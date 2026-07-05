@@ -23,7 +23,7 @@ export const StatCard: React.FC<StatCardProps> = ({
     iconColor,
 }) => {
     return (
-        <Card className="border border-border/40 shadow-sm transition-all duration-200 hover:border-border/80 hover:shadow">
+        <Card className="border border-border/30 bg-card/45 shadow-sm backdrop-blur-md transition-all duration-200 hover:border-border/60 hover:bg-card/65 hover:shadow-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                     {title}

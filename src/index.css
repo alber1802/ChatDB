@@ -1,6 +1,9 @@
+@import './dashboard-bg.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 
 @layer components {
     .react-flow.canvas-cursor-default .react-flow__pane {

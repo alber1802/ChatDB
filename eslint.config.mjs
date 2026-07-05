@@ -72,6 +72,7 @@ export default [
             'react/no-unescaped-entities': 'off',
             'react/prop-types': 'off',
             '@typescript-eslint/no-empty-object-type': 'off',
+            'tailwindcss/no-custom-classname': 'off',
         },
     },
 ];

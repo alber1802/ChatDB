@@ -77,7 +77,8 @@ export const CreateDiagramDialog: React.FC<CreateDiagramDialogProps> = ({
     }, [dialog.open]);
 
     const isEditor = window.location.pathname.startsWith('/diagrams');
-    const hasExistingDiagram = ((diagramId ?? '').trim().length !== 0) || !isEditor;
+    const hasExistingDiagram =
+        (diagramId ?? '').trim().length !== 0 || !isEditor;
 
     const importNewDiagram = useCallback(
         async ({

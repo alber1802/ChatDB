@@ -33,7 +33,7 @@ export const RecentUsersCard: React.FC<RecentUsersCardProps> = ({
     loading,
 }) => {
     return (
-        <Card className="flex h-full flex-col border border-border/40 shadow-sm">
+        <Card className="flex h-full flex-col border border-border/30 bg-card/45 shadow-sm backdrop-blur-md">
             <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold text-foreground">
                     Usuarios Recientes

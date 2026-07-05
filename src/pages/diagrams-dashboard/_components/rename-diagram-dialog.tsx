@@ -43,13 +43,19 @@ export const RenameDiagramDialog: React.FC<RenameDiagramDialogProps> = ({
     };
 
     return (
-        <Dialog open={open} onOpenChange={(val) => { if (!val) onClose(); }}>
+        <Dialog
+            open={open}
+            onOpenChange={(val) => {
+                if (!val) onClose();
+            }}
+        >
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Renombrar Diagrama</DialogTitle>
                         <DialogDescription>
-                            Escribe el nuevo nombre para tu diagrama de base de datos.
+                            Escribe el nuevo nombre para tu diagrama de base de
+                            datos.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -67,7 +73,11 @@ export const RenameDiagramDialog: React.FC<RenameDiagramDialogProps> = ({
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={onClose}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onClose}
+                        >
                             {t('open_diagram_dialog.cancel')}
                         </Button>
                         <Button type="submit" disabled={!name.trim()}>
