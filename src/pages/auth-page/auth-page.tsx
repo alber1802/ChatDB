@@ -1,24 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { EmailSentView } from './email-sent-view';
 import { AuthCard } from './auth-card';
 import { ShowcaseSection } from './showcase-section';
 
 export const AuthPage: React.FC = () => {
-    const [emailSent, setEmailSent] = useState(false);
-    const [registeredEmail, setRegisteredEmail] = useState('');
     const navigate = useNavigate();
-
-    if (emailSent) {
-        return (
-            <EmailSentView
-                email={registeredEmail}
-                onBackToLogin={() => {
-                    setEmailSent(false);
-                }}
-            />
-        );
-    }
 
     return (
         <div
@@ -80,14 +66,7 @@ export const AuthPage: React.FC = () => {
             </div>
 
             <div className="relative z-10 grid w-full max-w-6xl grid-cols-1 gap-8 p-4 md:p-8 lg:grid-cols-12 lg:gap-16">
-                <AuthCard
-                    initialEmail={registeredEmail}
-                    onLoginSuccess={() => navigate('/')}
-                    onRegisterSuccess={(email) => {
-                        setRegisteredEmail(email);
-                        setEmailSent(true);
-                    }}
-                />
+                <AuthCard onLoginSuccess={() => navigate('/')} />
                 <ShowcaseSection />
             </div>
         </div>

@@ -1,5 +1,12 @@
 import React from 'react';
-import { Edit2, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import {
+    Edit2,
+    Trash2,
+    CheckCircle,
+    XCircle,
+    ShieldOff,
+    ShieldAlert,
+} from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { RoleBadge } from '../_components/role-badge';
 import { formatDateTime } from '../_utils/format-date';
@@ -12,6 +19,7 @@ interface UsersTableProps {
     currentUserRole: string | null;
     onEdit: (user: AdminUserProfile) => void;
     onDelete: (user: AdminUserProfile) => void;
+    onUnblock: (user: AdminUserProfile) => void;
 }
 
 export const UsersTable: React.FC<UsersTableProps> = ({
@@ -20,6 +28,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({
     currentUserRole,
     onEdit,
     onDelete,
+    onUnblock,
 }) => {
     const columns: AdminColumn<AdminUserProfile>[] = [
         {
@@ -61,6 +70,22 @@ export const UsersTable: React.FC<UsersTableProps> = ({
                 ),
         },
         {
+            header: 'Estado',
+            className: 'text-xs font-semibold',
+            render: (user) =>
+                user.is_blocked ? (
+                    <div className="flex items-center gap-x-1.5 text-xs font-medium text-red-500">
+                        <ShieldAlert className="size-4 shrink-0" />
+                        <span>Bloqueado</span>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-x-1.5 text-xs font-medium text-emerald-500">
+                        <CheckCircle className="size-4 shrink-0" />
+                        <span>Activo</span>
+                    </div>
+                ),
+        },
+        {
             header: 'Última Conexión',
             className: 'text-xs font-semibold',
             cellClassName: 'text-xs text-muted-foreground',
@@ -72,6 +97,17 @@ export const UsersTable: React.FC<UsersTableProps> = ({
             cellClassName: 'pr-6 text-right',
             render: (user) => (
                 <div className="flex justify-end gap-x-1">
+                    {user.is_blocked && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onUnblock(user)}
+                            title="Desbloquear Usuario"
+                            className="size-8 cursor-pointer rounded-md text-amber-500 hover:bg-amber-500/15"
+                        >
+                            <ShieldOff className="size-4" />
+                        </Button>
+                    )}
                     <Button
                         variant="ghost"
                         size="icon"

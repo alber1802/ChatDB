@@ -10,6 +10,7 @@ import { UsersTable } from './users-table';
 import { useAlert } from '@/context/alert-context/alert-context';
 import { useAdminUsers } from '../_hooks/use-admin-users';
 import type { AdminUserProfile } from '../_types/admin.types';
+import { notify } from '@/lib/notifications';
 
 export const UsersList: React.FC = () => {
     const { role: currentUserRole } = useAuth();
@@ -92,6 +93,33 @@ export const UsersList: React.FC = () => {
         });
     };
 
+    const handleUnblockClick = async (user: AdminUserProfile) => {
+        try {
+            const { error } = await supabase
+                .from('user_profiles')
+                .update({ is_blocked: false, login_fail_count: 0 })
+                .eq('user_id', user.id);
+
+            if (error) throw error;
+
+            // Clear localStorage flag so the client can attempt login again
+            localStorage.removeItem(`blocked_${user.email}`);
+
+            notify.success(
+                'Usuario desbloqueado',
+                `${user.email} puede iniciar sesión nuevamente.`
+            );
+            refetch();
+        } catch (err: unknown) {
+            console.error('Error unblocking user:', err);
+            const errMsg =
+                err instanceof Error
+                    ? err.message
+                    : 'Ocurrió un error inesperado.';
+            notify.error('Error al desbloquear', errMsg);
+        }
+    };
+
     return (
         <div className="flex select-none flex-col gap-y-6 font-primary">
             {/* Header */}
@@ -136,6 +164,7 @@ export const UsersList: React.FC = () => {
                         currentUserRole={currentUserRole}
                         onEdit={handleEditClick}
                         onDelete={handleDeleteClick}
+                        onUnblock={handleUnblockClick}
                     />
                 </CardContent>
             </Card>

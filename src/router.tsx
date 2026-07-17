@@ -202,6 +202,14 @@ const routes: RouteObject[] = [
                         },
                     },
                     {
+                        path: 'waitlist',
+                        async lazy() {
+                            const { WaitlistList } =
+                                await import('./pages/admin/waitlist/waitlist-list');
+                            return { element: <WaitlistList /> };
+                        },
+                    },
+                    {
                         path: 'audit',
                         async lazy() {
                             const { AuditLogs } =

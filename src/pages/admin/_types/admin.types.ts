@@ -8,6 +8,22 @@ export interface AdminUserProfile {
     role_id: string;
     created_at: string;
     updated_at: string;
+    /** Whether the account is permanently blocked by login failures */
+    is_blocked?: boolean;
+    /** Total cumulative failed login attempts */
+    login_fail_count?: number;
+}
+
+export type WaitlistStatus = 'pending' | 'approved' | 'rejected';
+
+export interface WaitlistEntry {
+    id: string;
+    email: string;
+    requested_at: string;
+    approved_at: string | null;
+    approved_by: string | null;
+    status: WaitlistStatus;
+    notes: string | null;
 }
 
 export interface DashboardStats {

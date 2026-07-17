@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ChartDBLogo from '@/assets/logo-light.png';
 import ChartDBDarkLogo from '@/assets/logo-dark.png';
 import { useTheme } from '@/hooks/use-theme';
 import { LanguageNav } from '@/pages/editor-page/top-navbar/language-nav/language-nav';
 import { useAuth } from '@/context/auth-context/auth-context';
 import { IS_SUPABASE_ENABLED } from '@/lib/env';
-import { LogOut, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { LogOut, ShieldCheck, Sun, Moon, Settings } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -22,11 +22,13 @@ import {
     DropdownMenuTrigger,
 } from '@/components/dropdown-menu/dropdown-menu';
 import { Badge } from '@/components/badge/badge';
+import { ProfileSettingsDialog } from './profile-settings-dialog';
 
 export const DashboardHeader: React.FC = () => {
     const { effectiveTheme, setTheme } = useTheme();
     const { user, signOut, isAdmin, role, profile } = useAuth();
     const navigate = useNavigate();
+    const [openSettings, setOpenSettings] = useState(false);
 
     const toggleTheme = () => {
         setTheme(effectiveTheme === 'dark' ? 'light' : 'dark');
@@ -157,6 +159,13 @@ export const DashboardHeader: React.FC = () => {
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                onClick={() => setOpenSettings(true)}
+                                className="cursor-pointer gap-2"
+                            >
+                                <Settings className="size-4 text-muted-foreground" />
+                                Configuración
+                            </DropdownMenuItem>
                             {isAdmin && isAdmin() && (
                                 <DropdownMenuItem
                                     onClick={() => navigate('/admin')}
@@ -178,6 +187,12 @@ export const DashboardHeader: React.FC = () => {
                     </DropdownMenu>
                 )}
             </div>
+            {IS_SUPABASE_ENABLED && user && (
+                <ProfileSettingsDialog
+                    open={openSettings}
+                    onOpenChange={setOpenSettings}
+                />
+            )}
         </header>
     );
 };

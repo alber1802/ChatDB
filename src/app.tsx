@@ -6,8 +6,8 @@ import { HelmetData } from './helmet/helmet-data';
 import { HelmetProvider } from 'react-helmet-async';
 import { LocalConfigProvider } from './context/local-config-context/local-config-provider';
 import { ThemeProvider } from './context/theme-context/theme-provider';
-
 import { AuthProvider } from './context/auth-context/auth-context';
+import { Toaster } from 'sileo';
 
 export const App = () => {
     return (
@@ -17,6 +17,7 @@ export const App = () => {
                 <LocalConfigProvider>
                     <ThemeProvider>
                         <AuthProvider>
+                            <Toaster position="top-center" />
                             <RouterProvider router={router} />
                         </AuthProvider>
                     </ThemeProvider>

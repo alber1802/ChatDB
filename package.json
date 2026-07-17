@@ -75,6 +75,7 @@
         "react-use": "^17.6.1",
         "rehype-raw": "^7.0.0",
         "remark-gfm": "^4.0.1",
+        "sileo": "^0.1.5",
         "tailwind-merge": "^2.6.1",
         "tailwindcss-animate": "^1.0.7",
         "timeago-react": "^3.0.7",

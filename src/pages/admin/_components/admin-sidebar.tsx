@@ -10,6 +10,7 @@ import {
     FileText,
     ArrowLeft,
     LogOut,
+    ClipboardList,
 } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import {
@@ -42,6 +43,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             name: 'Usuarios',
             path: '/admin/users',
             icon: Users,
+        },
+        {
+            name: 'Lista de Espera',
+            path: '/admin/waitlist',
+            icon: ClipboardList,
         },
         {
             name: 'Logs de Auditoría',
