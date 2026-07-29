@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api-client';
+import { IS_API_ENABLED } from '@/lib/env';
 import { Card, CardContent, CardHeader } from '@/components/card/card';
 import { Input } from '@/components/input/input';
 import { Button } from '@/components/button/button';
@@ -22,6 +24,15 @@ export const AuditLogs: React.FC = () => {
     const fetchLogsAndUsers = async () => {
         try {
             setLoading(true);
+
+            if (IS_API_ENABLED) {
+                const mappedLogs = await apiFetch<AuditLog[]>(
+                    '/admin/audit-logs'
+                );
+                setLogs(mappedLogs);
+                setFilteredLogs(mappedLogs);
+                return;
+            }
 
             // Fetch users for client-side email mapping
             const { data: usersData, error: usersError } =

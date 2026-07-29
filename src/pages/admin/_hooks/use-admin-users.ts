@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api-client';
+import { IS_API_ENABLED } from '@/lib/env';
 import type { AdminUserProfile } from '../_types/admin.types';
 
 export const useAdminUsers = () => {
@@ -11,10 +13,18 @@ export const useAdminUsers = () => {
         try {
             setLoading(true);
             setError(null);
-            const { data, error: supabaseError } =
-                await supabase.rpc('get_admin_users');
-            if (supabaseError) throw supabaseError;
-            setUsers((data || []) as AdminUserProfile[]);
+
+            if (IS_API_ENABLED) {
+                const data = await apiFetch<AdminUserProfile[]>(
+                    '/admin/users'
+                );
+                setUsers(data || []);
+            } else {
+                const { data, error: supabaseError } =
+                    await supabase.rpc('get_admin_users');
+                if (supabaseError) throw supabaseError;
+                setUsers((data || []) as AdminUserProfile[]);
+            }
         } catch (err) {
             console.error('Error fetching admin users:', err);
             setError(

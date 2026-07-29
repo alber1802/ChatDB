@@ -25,6 +25,8 @@ COPY ./default.conf.template /etc/nginx/templates/default.conf.template
 
 # Puerto por defecto para Docker local (Heroku lo sobrescribirá)
 ENV PORT=80
+# Upstream del API Node cuando se usa proxy /api (mismo dominio)
+ENV API_UPSTREAM=http://127.0.0.1:3001
 EXPOSE 80
 
 # Usamos el comando nativo de Nginx

@@ -5,6 +5,8 @@ import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { Label } from '@/components/label/label';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api-client';
+import { IS_API_ENABLED } from '@/lib/env';
 import { notify } from '@/lib/notifications';
 
 interface WaitlistModalProps {
@@ -25,27 +27,41 @@ export const WaitlistModal: React.FC<WaitlistModalProps> = ({
         setLoading(true);
 
         try {
-            const { error } = await supabase.from('waitlist').insert({
-                email: email.toLowerCase().trim(),
-            });
-
-            if (error) {
-                if (error.code === '23505') {
-                    // unique violation — email already in list
-                    notify.info(
-                        'Correo ya registrado',
-                        'Este correo ya está en nuestra lista de espera. ¡Te avisaremos pronto!'
-                    );
-                    setSubmitted(true);
-                } else {
-                    throw error;
-                }
-            } else {
+            if (IS_API_ENABLED) {
+                await apiFetch('/waitlist', {
+                    auth: false,
+                    method: 'POST',
+                    body: JSON.stringify({
+                        email: email.toLowerCase().trim(),
+                    }),
+                });
                 notify.success(
                     '¡Solicitud enviada!',
                     'Recibirás un correo cuando tu acceso sea aprobado.'
                 );
                 setSubmitted(true);
+            } else {
+                const { error } = await supabase.from('waitlist').insert({
+                    email: email.toLowerCase().trim(),
+                });
+
+                if (error) {
+                    if (error.code === '23505') {
+                        notify.info(
+                            'Correo ya registrado',
+                            'Este correo ya está en nuestra lista de espera. ¡Te avisaremos pronto!'
+                        );
+                        setSubmitted(true);
+                    } else {
+                        throw error;
+                    }
+                } else {
+                    notify.success(
+                        '¡Solicitud enviada!',
+                        'Recibirás un correo cuando tu acceso sea aprobado.'
+                    );
+                    setSubmitted(true);
+                }
             }
         } catch (err) {
             console.error(err);

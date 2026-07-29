@@ -10,6 +10,7 @@ import React, {
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import type { UserProfile } from '@/lib/rbac';
+import { API_URL, IS_API_ENABLED } from '@/lib/env';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 /** How many failures trigger a temporary cooldown */
@@ -194,7 +195,68 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
         ): Promise<{ error: AuthError | Error | null }> => {
             const cleanEmail = email.trim().toLowerCase();
 
-            // 1. Check temporary cooldown
+            // Prefer server-side lockout when API is enabled (not bypassable via localStorage)
+            if (IS_API_ENABLED) {
+                try {
+                    const res = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: cleanEmail,
+                            password,
+                        }),
+                    });
+                    const payload = (await res.json().catch(() => ({}))) as {
+                        message?: string;
+                        error?: string;
+                        access_token?: string;
+                        refresh_token?: string;
+                    };
+
+                    if (!res.ok) {
+                        if (payload.error === 'cooldown') {
+                            setIsLockedOut(true);
+                            setLockoutUntil(
+                                new Date(Date.now() + COOLDOWN_MS)
+                            );
+                        }
+                        return {
+                            error: new Error(
+                                payload.message ??
+                                    'Invalid login credentials'
+                            ),
+                        };
+                    }
+
+                    if (!payload.access_token || !payload.refresh_token) {
+                        return {
+                            error: new Error('Invalid login response'),
+                        };
+                    }
+
+                    const { error: sessionError } =
+                        await supabase.auth.setSession({
+                            access_token: payload.access_token,
+                            refresh_token: payload.refresh_token,
+                        });
+
+                    if (sessionError) return { error: sessionError };
+
+                    setLoginAttempts(0);
+                    setIsLockedOut(false);
+                    setLockoutUntil(null);
+                    return { error: null };
+                } catch (err) {
+                    return {
+                        error:
+                            err instanceof Error
+                                ? err
+                                : new Error('Login failed'),
+                    };
+                }
+            }
+
+            // Fallback: client-side lockout + direct Supabase Auth
             const cooldownStr = localStorage.getItem(`cooldown_${cleanEmail}`);
             if (cooldownStr) {
                 const until = new Date(cooldownStr);
@@ -212,7 +274,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                 }
             }
 
-            // 2. Check permanent block (local + server RPC verification)
             const localBlocked =
                 localStorage.getItem(`blocked_${cleanEmail}`) === 'true';
             let isBlockedOnServer = false;
@@ -236,20 +297,17 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                     ),
                 };
             } else if (localBlocked) {
-                // Admin unblocked the user on the database
                 localStorage.removeItem(`blocked_${cleanEmail}`);
                 localStorage.removeItem(`attempts_${cleanEmail}`);
                 localStorage.removeItem(`cooldown_${cleanEmail}`);
             }
 
-            // 3. Attempt Supabase login
             const { error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
             if (!error) {
-                // Success → reset counters
                 localStorage.removeItem(`attempts_${cleanEmail}`);
                 localStorage.removeItem(`cooldown_${cleanEmail}`);
                 localStorage.removeItem(`blocked_${cleanEmail}`);
@@ -262,7 +320,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                     cooldownTimerRef.current = null;
                 }
 
-                // 4. Double check server-side is_blocked flag after session is created
                 const { data: prof } = await supabase
                     .from('user_profiles')
                     .select('is_blocked')
@@ -285,7 +342,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                 return { error: null };
             }
 
-            // 5. Login failed → record attempt
             await recordLoginAttempt(cleanEmail);
 
             const prevAttempts = parseInt(
@@ -299,7 +355,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
             );
             setLoginAttempts(newAttempts);
 
-            // 6. Permanent block after ATTEMPTS_BEFORE_PERMANENT_BLOCK total failures (9)
             if (newAttempts >= ATTEMPTS_BEFORE_PERMANENT_BLOCK) {
                 await blockUserProfile(cleanEmail);
                 setLoginAttempts(0);
@@ -310,7 +365,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                 };
             }
 
-            // 7. Cooldown every ATTEMPTS_BEFORE_COOLDOWN failures (3)
             if (newAttempts % ATTEMPTS_BEFORE_COOLDOWN === 0) {
                 const until = new Date(Date.now() + COOLDOWN_MS);
                 localStorage.setItem(

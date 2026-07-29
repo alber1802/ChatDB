@@ -25,4 +25,5 @@ dist-ssr
 
 .env
 .env.docker
+server/.env
 stats/
