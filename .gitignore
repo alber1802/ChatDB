@@ -22,7 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
+.mcp.json
 .env
 .env.docker
 server/.env
