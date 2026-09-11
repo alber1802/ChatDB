@@ -118,7 +118,9 @@ async function applyOperation(
             }
             if (op.op === 'update') {
                 const parsed = tablePatchSchema.parse(op.patch ?? {});
-                await diagramsService.updateTable(client, op.id, parsed);
+                await ignoreNotFound(() =>
+                    diagramsService.updateTable(client, op.id, parsed)
+                );
                 return;
             }
             const parsed = tableSchema.parse({ id: op.id, ...op.patch });
@@ -139,7 +141,9 @@ async function applyOperation(
             }
             if (op.op === 'update') {
                 const parsed = relationshipPatchSchema.parse(op.patch ?? {});
-                await diagramsService.updateRelationship(client, op.id, parsed);
+                await ignoreNotFound(() =>
+                    diagramsService.updateRelationship(client, op.id, parsed)
+                );
                 return;
             }
             const parsed = relationshipSchema.parse({ id: op.id, ...op.patch });
@@ -160,7 +164,9 @@ async function applyOperation(
             }
             if (op.op === 'update') {
                 const parsed = dependencyPatchSchema.parse(op.patch ?? {});
-                await diagramsService.updateDependency(client, op.id, parsed);
+                await ignoreNotFound(() =>
+                    diagramsService.updateDependency(client, op.id, parsed)
+                );
                 return;
             }
             const parsed = dependencySchema.parse({ id: op.id, ...op.patch });
@@ -181,7 +187,9 @@ async function applyOperation(
             }
             if (op.op === 'update') {
                 const parsed = areaPatchSchema.parse(op.patch ?? {});
-                await diagramsService.updateArea(client, op.id, parsed);
+                await ignoreNotFound(() =>
+                    diagramsService.updateArea(client, op.id, parsed)
+                );
                 return;
             }
             const parsed = areaSchema.parse({ id: op.id, ...op.patch });
@@ -202,7 +210,9 @@ async function applyOperation(
             }
             if (op.op === 'update') {
                 const parsed = customTypePatchSchema.parse(op.patch ?? {});
-                await diagramsService.updateCustomType(client, op.id, parsed);
+                await ignoreNotFound(() =>
+                    diagramsService.updateCustomType(client, op.id, parsed)
+                );
                 return;
             }
             const parsed = customTypeSchema.parse({ id: op.id, ...op.patch });
@@ -223,7 +233,9 @@ async function applyOperation(
             }
             if (op.op === 'update') {
                 const parsed = notePatchSchema.parse(op.patch ?? {});
-                await diagramsService.updateNote(client, op.id, parsed);
+                await ignoreNotFound(() =>
+                    diagramsService.updateNote(client, op.id, parsed)
+                );
                 return;
             }
             const parsed = noteSchema.parse({ id: op.id, ...op.patch });
