@@ -5,9 +5,11 @@ import {
     diagramPatchSchema,
     diagramSchema,
     includeQuerySchema,
+    syncRequestSchema,
 } from '../../lib/schemas.js';
 import { AppError } from '../../lib/types.js';
 import { diagramsService } from './diagrams.service.js';
+import { syncService } from '../sync/sync.service.js';
 import type { DiagramDto } from '../../lib/mappers.js';
 
 export const diagramsRouter = Router();
@@ -58,6 +60,18 @@ diagramsRouter.patch('/:id', async (req, res, next) => {
             diagramsService.update(client, req.params.id, body)
         );
         res.json({ ok: true });
+    } catch (err) {
+        next(err);
+    }
+});
+
+diagramsRouter.post('/:id/sync', async (req, res, next) => {
+    try {
+        const body = syncRequestSchema.parse(req.body);
+        const result = await withUserContext(req.user!.id, (client) =>
+            syncService.apply(client, req.params.id, req.user!.id, body)
+        );
+        res.json(result);
     } catch (err) {
         next(err);
     }
