@@ -19,6 +19,7 @@ export interface Diagram {
     description?: string;
     databaseType: DatabaseType;
     databaseEdition?: DatabaseEdition;
+    version: number;
     tables?: DBTable[];
     relationships?: DBRelationship[];
     dependencies?: DBDependency[];
@@ -35,6 +36,7 @@ export const diagramSchema: z.ZodType<Diagram> = z.object({
     description: z.string().optional(),
     databaseType: z.nativeEnum(DatabaseType),
     databaseEdition: z.nativeEnum(DatabaseEdition).optional(),
+    version: z.number().default(1),
     tables: z.array(dbTableSchema).optional(),
     relationships: z.array(dbRelationshipSchema).optional(),
     dependencies: z.array(dbDependencySchema).optional(),
