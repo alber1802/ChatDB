@@ -17,10 +17,16 @@ export default defineConfig({
                 {
                     entryMatch: /logo-light.png$/,
                     outputMatch: /logo-light-.*.png$/,
+                    attributes: {
+                        media: '(prefers-color-scheme: light)',
+                    },
                 },
                 {
                     entryMatch: /logo-dark.png$/,
                     outputMatch: /logo-dark-.*.png$/,
+                    attributes: {
+                        media: '(prefers-color-scheme: dark)',
+                    },
                 },
             ],
         }),

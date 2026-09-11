@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import jwt from 'jsonwebtoken';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { env } from '../config/env.js';
 import { AppError, type AuthUser } from '../lib/types.js';
 
@@ -17,7 +17,13 @@ declare global {
     }
 }
 
-export const authenticate: RequestHandler = (req, _res, next) => {
+// Supabase signs session tokens with its rotating JWT signing keys (ES256),
+// published as a JWKS — not the legacy shared HS256 secret.
+const jwks = createRemoteJWKSet(
+    new URL('/auth/v1/.well-known/jwks.json', env.SUPABASE_URL)
+);
+
+export const authenticate: RequestHandler = async (req, _res, next) => {
     const header = req.headers.authorization;
     if (!header?.startsWith('Bearer ')) {
         return next(new AppError(401, 'Missing bearer token', 'missing_token'));
@@ -29,9 +35,9 @@ export const authenticate: RequestHandler = (req, _res, next) => {
     }
 
     try {
-        const payload = jwt.verify(token, env.SUPABASE_JWT_SECRET, {
-            algorithms: ['HS256'],
-        }) as JwtPayload;
+        const { payload } = (await jwtVerify(token, jwks, {
+            issuer: new URL('/auth/v1', env.SUPABASE_URL).toString(),
+        })) as { payload: JwtPayload };
 
         if (!payload.sub) {
             return next(new AppError(401, 'Invalid token payload', 'invalid_token'));
