@@ -72,6 +72,7 @@ export class SyncEngine {
     private flushTimer: ReturnType<typeof setTimeout> | null = null;
     private inFlight = false;
     private retryCount = 0;
+    private destroyed = false;
     private version: number;
     private readonly flushDelayMs: number;
     private readonly maxRetries: number;
@@ -109,6 +110,24 @@ export class SyncEngine {
         return queued.patch ?? null;
     }
 
+    // Once destroyed, this engine must not report status/conflicts to
+    // whatever component/callback it was constructed with — that callback
+    // may since have been repurposed for a different diagram (see
+    // ApiStorageProvider.ensureEngine). The in-flight send / retry
+    // scheduling itself is deliberately NOT gated on `destroyed`: we still
+    // want a destroyed engine's last pending write to reach the server (or
+    // be re-queued for the next engine to pick up via localStorage), we
+    // just stop it from talking to stale callbacks once it's gone.
+    private notifyStatus(status: SyncStatus, message?: string): void {
+        if (this.destroyed) return;
+        this.onStatusChange?.(status, message);
+    }
+
+    private notifyConflict(conflicts: SyncConflictInfo[]): void {
+        if (this.destroyed) return;
+        this.onConflict?.(conflicts);
+    }
+
     private scheduleFlush(): void {
         if (this.flushTimer) clearTimeout(this.flushTimer);
         this.flushTimer = setTimeout(() => {
@@ -124,12 +143,12 @@ export class SyncEngine {
         }
         if (this.inFlight || this.queue.size === 0) return;
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-            this.onStatusChange?.('offline');
+            this.notifyStatus('offline');
             return;
         }
 
         this.inFlight = true;
-        this.onStatusChange?.('saving');
+        this.notifyStatus('saving');
 
         this.inFlightSnapshot = new Map(this.queue);
         const batch = [...this.queue.values()];
@@ -150,8 +169,9 @@ export class SyncEngine {
             this.version = result.version;
             this.retryCount = 0;
             this.inFlightSnapshot.clear();
-            this.onStatusChange?.(this.queue.size > 0 ? 'saving' : 'saved');
-            if (result.conflicts.length > 0) this.onConflict?.(result.conflicts);
+            this.notifyStatus(this.queue.size > 0 ? 'saving' : 'saved');
+            if (result.conflicts.length > 0)
+                this.notifyConflict(result.conflicts);
         } catch (err) {
             for (const op of batch) {
                 const key = `${op.entity}:${op.id}`;
@@ -165,13 +185,16 @@ export class SyncEngine {
             this.persistQueue();
             this.retryCount += 1;
             if (this.retryCount > this.maxRetries) {
-                this.onStatusChange?.(
+                this.notifyStatus(
                     'error',
                     err instanceof Error ? err.message : 'Sync failed'
                 );
             } else {
-                const backoff = Math.min(1000 * 2 ** (this.retryCount - 1), 16000);
-                this.onStatusChange?.('offline');
+                const backoff = Math.min(
+                    1000 * 2 ** (this.retryCount - 1),
+                    16000
+                );
+                this.notifyStatus('offline');
                 setTimeout(() => void this.flushNow(), backoff);
             }
         } finally {
@@ -188,7 +211,10 @@ export class SyncEngine {
             if (serializable.length === 0) {
                 localStorage.removeItem(this.storageKey);
             } else {
-                localStorage.setItem(this.storageKey, JSON.stringify(serializable));
+                localStorage.setItem(
+                    this.storageKey,
+                    JSON.stringify(serializable)
+                );
             }
         } catch {
             // localStorage no disponible (modo privado, cuota) — la cola sigue solo en memoria
@@ -224,11 +250,15 @@ export class SyncEngine {
     private attachLifecycleListeners(): void {
         if (typeof window === 'undefined') return;
         window.addEventListener('beforeunload', this.handleFlushTrigger);
-        document.addEventListener('visibilitychange', this.handleVisibilityChange);
+        document.addEventListener(
+            'visibilitychange',
+            this.handleVisibilityChange
+        );
         window.addEventListener('online', this.handleOnline);
     }
 
     destroy(): void {
+        this.destroyed = true;
         if (this.flushTimer) clearTimeout(this.flushTimer);
         if (typeof window === 'undefined') return;
         window.removeEventListener('beforeunload', this.handleFlushTrigger);

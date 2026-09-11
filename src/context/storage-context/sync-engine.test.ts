@@ -33,9 +33,24 @@ describe('SyncEngine', () => {
         vi.mocked(apiFetch).mockResolvedValue({ version: 2, conflicts: [] });
         const engine = new SyncEngine({ diagramId: 'd1', initialVersion: 1 });
 
-        engine.enqueue({ entity: 'table', op: 'update', id: 't1', patch: { x: 1 } });
-        engine.enqueue({ entity: 'table', op: 'update', id: 't1', patch: { y: 2 } });
-        engine.enqueue({ entity: 'area', op: 'create', id: 'a1', patch: { x: 0, y: 0, width: 10, height: 10, color: '#fff' } });
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { x: 1 },
+        });
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { y: 2 },
+        });
+        engine.enqueue({
+            entity: 'area',
+            op: 'create',
+            id: 'a1',
+            patch: { x: 0, y: 0, width: 10, height: 10, color: '#fff' },
+        });
 
         await vi.advanceTimersByTimeAsync(700);
 
@@ -50,7 +65,12 @@ describe('SyncEngine', () => {
 
     it('exposes a pending patch via peek before it is flushed', () => {
         const engine = new SyncEngine({ diagramId: 'd1', initialVersion: 1 });
-        engine.enqueue({ entity: 'table', op: 'update', id: 't1', patch: { x: 5 } });
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { x: 5 },
+        });
         expect(engine.peek('table', 't1')).toEqual({ x: 5 });
         expect(engine.peek('table', 'unknown')).toBeNull();
         engine.destroy();
@@ -66,12 +86,52 @@ describe('SyncEngine', () => {
             onStatusChange,
         });
 
-        engine.enqueue({ entity: 'table', op: 'update', id: 't1', patch: { x: 1 } });
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { x: 1 },
+        });
         await vi.advanceTimersByTimeAsync(700); // primer intento falla
         await vi.advanceTimersByTimeAsync(1000); // reintento 1 falla
         await vi.advanceTimersByTimeAsync(2000); // reintento 2 falla -> error
 
         expect(onStatusChange).toHaveBeenCalledWith('error', 'network down');
         engine.destroy();
+    });
+
+    it('silences status/conflict notifications once destroyed, without dropping the in-flight send', async () => {
+        vi.mocked(apiFetch).mockResolvedValue({ version: 2, conflicts: [] });
+        const onStatusChange = vi.fn();
+        const engine = new SyncEngine({
+            diagramId: 'd1',
+            initialVersion: 1,
+            onStatusChange,
+        });
+
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { x: 1 },
+        });
+
+        // Start the send directly (mirrors ApiStorageProvider.ensureEngine's
+        // fire-and-forget `flushNow()` right before switching diagrams).
+        // flushNow() runs synchronously up to its first `await`, which is
+        // enough to invoke the 'saving' notification before we destroy.
+        const pending = engine.flushNow();
+        expect(onStatusChange.mock.calls[0][0]).toBe('saving');
+        const callsBeforeDestroy = onStatusChange.mock.calls.length;
+
+        engine.destroy();
+
+        // Let the in-flight apiFetch call resolve. Without the destroyed
+        // guard this would call onStatusChange('saved') on a callback that
+        // may since have been repurposed for a different diagram.
+        await pending;
+
+        expect(apiFetch).toHaveBeenCalledTimes(1); // the send itself still happened
+        expect(onStatusChange).toHaveBeenCalledTimes(callsBeforeDestroy);
     });
 });
