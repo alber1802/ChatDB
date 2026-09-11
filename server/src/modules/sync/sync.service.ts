@@ -87,6 +87,15 @@ export function collapseOperations(
     return [...byKey.values()];
 }
 
+async function ignoreNotFound(fn: () => Promise<void>): Promise<void> {
+    try {
+        await fn();
+    } catch (err) {
+        if (err instanceof AppError && err.statusCode === 404) return;
+        throw err;
+    }
+}
+
 async function applyOperation(
     client: PoolClient,
     diagramId: string,
@@ -102,97 +111,126 @@ async function applyOperation(
         }
         case 'table': {
             if (op.op === 'delete') {
-                await diagramsService.deleteTable(client, diagramId, op.id);
+                await ignoreNotFound(() =>
+                    diagramsService.deleteTable(client, diagramId, op.id)
+                );
                 return;
             }
-            const schema = op.op === 'create' ? tableSchema : tablePatchSchema;
-            const parsed = schema.parse({ id: op.id, ...op.patch });
+            if (op.op === 'update') {
+                const parsed = tablePatchSchema.parse(op.patch ?? {});
+                await diagramsService.updateTable(client, op.id, parsed);
+                return;
+            }
+            const parsed = tableSchema.parse({ id: op.id, ...op.patch });
             await diagramsService.upsertTable(
                 client,
                 diagramId,
-                { id: op.id, ...parsed } as TableDto,
+                parsed as TableDto,
                 userId
             );
             return;
         }
         case 'relationship': {
             if (op.op === 'delete') {
-                await diagramsService.deleteRelationship(
-                    client,
-                    diagramId,
-                    op.id
+                await ignoreNotFound(() =>
+                    diagramsService.deleteRelationship(client, diagramId, op.id)
                 );
                 return;
             }
-            const schema =
-                op.op === 'create' ? relationshipSchema : relationshipPatchSchema;
-            const parsed = schema.parse({ id: op.id, ...op.patch });
+            if (op.op === 'update') {
+                const parsed = relationshipPatchSchema.parse(op.patch ?? {});
+                await diagramsService.updateRelationship(client, op.id, parsed);
+                return;
+            }
+            const parsed = relationshipSchema.parse({ id: op.id, ...op.patch });
             await diagramsService.upsertRelationship(
                 client,
                 diagramId,
-                { id: op.id, ...parsed } as RelationshipDto,
+                parsed as RelationshipDto,
                 userId
             );
             return;
         }
         case 'dependency': {
             if (op.op === 'delete') {
-                await diagramsService.deleteDependency(client, diagramId, op.id);
+                await ignoreNotFound(() =>
+                    diagramsService.deleteDependency(client, diagramId, op.id)
+                );
                 return;
             }
-            const schema =
-                op.op === 'create' ? dependencySchema : dependencyPatchSchema;
-            const parsed = schema.parse({ id: op.id, ...op.patch });
+            if (op.op === 'update') {
+                const parsed = dependencyPatchSchema.parse(op.patch ?? {});
+                await diagramsService.updateDependency(client, op.id, parsed);
+                return;
+            }
+            const parsed = dependencySchema.parse({ id: op.id, ...op.patch });
             await diagramsService.upsertDependency(
                 client,
                 diagramId,
-                { id: op.id, ...parsed } as DependencyDto,
+                parsed as DependencyDto,
                 userId
             );
             return;
         }
         case 'area': {
             if (op.op === 'delete') {
-                await diagramsService.deleteArea(client, diagramId, op.id);
+                await ignoreNotFound(() =>
+                    diagramsService.deleteArea(client, diagramId, op.id)
+                );
                 return;
             }
-            const schema = op.op === 'create' ? areaSchema : areaPatchSchema;
-            const parsed = schema.parse({ id: op.id, ...op.patch });
+            if (op.op === 'update') {
+                const parsed = areaPatchSchema.parse(op.patch ?? {});
+                await diagramsService.updateArea(client, op.id, parsed);
+                return;
+            }
+            const parsed = areaSchema.parse({ id: op.id, ...op.patch });
             await diagramsService.upsertArea(
                 client,
                 diagramId,
-                { id: op.id, ...parsed } as AreaDto,
+                parsed as AreaDto,
                 userId
             );
             return;
         }
         case 'customType': {
             if (op.op === 'delete') {
-                await diagramsService.deleteCustomType(client, diagramId, op.id);
+                await ignoreNotFound(() =>
+                    diagramsService.deleteCustomType(client, diagramId, op.id)
+                );
                 return;
             }
-            const schema =
-                op.op === 'create' ? customTypeSchema : customTypePatchSchema;
-            const parsed = schema.parse({ id: op.id, ...op.patch });
+            if (op.op === 'update') {
+                const parsed = customTypePatchSchema.parse(op.patch ?? {});
+                await diagramsService.updateCustomType(client, op.id, parsed);
+                return;
+            }
+            const parsed = customTypeSchema.parse({ id: op.id, ...op.patch });
             await diagramsService.upsertCustomType(
                 client,
                 diagramId,
-                { id: op.id, ...parsed } as CustomTypeDto,
+                parsed as CustomTypeDto,
                 userId
             );
             return;
         }
         case 'note': {
             if (op.op === 'delete') {
-                await diagramsService.deleteNote(client, diagramId, op.id);
+                await ignoreNotFound(() =>
+                    diagramsService.deleteNote(client, diagramId, op.id)
+                );
                 return;
             }
-            const schema = op.op === 'create' ? noteSchema : notePatchSchema;
-            const parsed = schema.parse({ id: op.id, ...op.patch });
+            if (op.op === 'update') {
+                const parsed = notePatchSchema.parse(op.patch ?? {});
+                await diagramsService.updateNote(client, op.id, parsed);
+                return;
+            }
+            const parsed = noteSchema.parse({ id: op.id, ...op.patch });
             await diagramsService.upsertNote(
                 client,
                 diagramId,
-                { id: op.id, ...parsed } as NoteDto,
+                parsed as NoteDto,
                 userId
             );
             return;
