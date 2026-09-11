@@ -37,7 +37,16 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (engineRef.current?.diagramId === diagramId) {
                 return engineRef.current;
             }
+            // Attempt to send whatever was still pending on the diagram we're
+            // leaving before tearing it down — destroy() only clears timers/
+            // listeners, it does not flush the queue.
+            void engineRef.current?.flushNow();
             engineRef.current?.destroy();
+            // The old engine's status no longer describes the diagram we're
+            // about to open; reset so stale "saving"/"error" state doesn't
+            // linger until the new engine's first onStatusChange fires.
+            setStatus('idle');
+            setErrorMessage(undefined);
             const engine = new SyncEngine({
                 diagramId,
                 initialVersion: version,
@@ -82,23 +91,6 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             engine.enqueue({ entity, op, id, patch });
         },
         [ensureEngine]
-    );
-
-    const peekOrFetch = useCallback(
-        async <T,>(
-            entity: SyncEntity,
-            id: string,
-            path: string
-        ): Promise<T | undefined> => {
-            const cached = engineRef.current?.peek(entity, id);
-            if (cached) return { id, ...cached } as unknown as T;
-            try {
-                return await apiFetch<T>(path);
-            } catch {
-                return undefined;
-            }
-        },
-        []
     );
 
     // ─── Config / filter (baja frecuencia, sin batching) ──────────────────
@@ -225,13 +217,22 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const getTable = useCallback(
-        ({ diagramId, id }: { diagramId: string; id: string }) =>
-            peekOrFetch<DBTable>(
-                'table',
-                id,
-                `/diagrams/${diagramId}/tables/${id}`
-            ),
-        [peekOrFetch]
+        async ({
+            diagramId,
+            id,
+        }: {
+            diagramId: string;
+            id: string;
+        }): Promise<DBTable | undefined> => {
+            try {
+                return await apiFetch<DBTable>(
+                    `/diagrams/${diagramId}/tables/${id}`
+                );
+            } catch {
+                return undefined;
+            }
+        },
+        []
     );
 
     const updateTable = useCallback(
@@ -290,13 +291,22 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const getRelationship = useCallback(
-        ({ diagramId, id }: { diagramId: string; id: string }) =>
-            peekOrFetch<DBRelationship>(
-                'relationship',
-                id,
-                `/diagrams/${diagramId}/relationships/${id}`
-            ),
-        [peekOrFetch]
+        async ({
+            diagramId,
+            id,
+        }: {
+            diagramId: string;
+            id: string;
+        }): Promise<DBRelationship | undefined> => {
+            try {
+                return await apiFetch<DBRelationship>(
+                    `/diagrams/${diagramId}/relationships/${id}`
+                );
+            } catch {
+                return undefined;
+            }
+        },
+        []
     );
 
     const updateRelationship = useCallback(
@@ -366,13 +376,22 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const getDependency = useCallback(
-        ({ diagramId, id }: { diagramId: string; id: string }) =>
-            peekOrFetch<DBDependency>(
-                'dependency',
-                id,
-                `/diagrams/${diagramId}/dependencies/${id}`
-            ),
-        [peekOrFetch]
+        async ({
+            diagramId,
+            id,
+        }: {
+            diagramId: string;
+            id: string;
+        }): Promise<DBDependency | undefined> => {
+            try {
+                return await apiFetch<DBDependency>(
+                    `/diagrams/${diagramId}/dependencies/${id}`
+                );
+            } catch {
+                return undefined;
+            }
+        },
+        []
     );
 
     const updateDependency = useCallback(
@@ -425,9 +444,22 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const getArea = useCallback(
-        ({ diagramId, id }: { diagramId: string; id: string }) =>
-            peekOrFetch<Area>('area', id, `/diagrams/${diagramId}/areas/${id}`),
-        [peekOrFetch]
+        async ({
+            diagramId,
+            id,
+        }: {
+            diagramId: string;
+            id: string;
+        }): Promise<Area | undefined> => {
+            try {
+                return await apiFetch<Area>(
+                    `/diagrams/${diagramId}/areas/${id}`
+                );
+            } catch {
+                return undefined;
+            }
+        },
+        []
     );
 
     const updateArea = useCallback(
@@ -478,13 +510,22 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const getCustomType = useCallback(
-        ({ diagramId, id }: { diagramId: string; id: string }) =>
-            peekOrFetch<DBCustomType>(
-                'customType',
-                id,
-                `/diagrams/${diagramId}/custom-types/${id}`
-            ),
-        [peekOrFetch]
+        async ({
+            diagramId,
+            id,
+        }: {
+            diagramId: string;
+            id: string;
+        }): Promise<DBCustomType | undefined> => {
+            try {
+                return await apiFetch<DBCustomType>(
+                    `/diagrams/${diagramId}/custom-types/${id}`
+                );
+            } catch {
+                return undefined;
+            }
+        },
+        []
     );
 
     const updateCustomType = useCallback(
@@ -537,9 +578,22 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const getNote = useCallback(
-        ({ diagramId, id }: { diagramId: string; id: string }) =>
-            peekOrFetch<Note>('note', id, `/diagrams/${diagramId}/notes/${id}`),
-        [peekOrFetch]
+        async ({
+            diagramId,
+            id,
+        }: {
+            diagramId: string;
+            id: string;
+        }): Promise<Note | undefined> => {
+            try {
+                return await apiFetch<Note>(
+                    `/diagrams/${diagramId}/notes/${id}`
+                );
+            } catch {
+                return undefined;
+            }
+        },
+        []
     );
 
     const updateNote = useCallback(
