@@ -51,4 +51,21 @@ describe('mappers', () => {
         } as unknown as Record<string, unknown>);
         expect(back.comments).toBe('hello');
     });
+
+    it('reads version from a diagram row, defaulting to 1', () => {
+        const row = {
+            id: 'd1',
+            name: 'Demo',
+            database_type: 'postgresql',
+            database_edition: null,
+            created_at: '2026-01-01T00:00:00.000Z',
+            updated_at: '2026-01-02T00:00:00.000Z',
+            version: 3,
+        };
+        const diagram = rowToDiagram(row);
+        expect(diagram.version).toBe(3);
+
+        const rowNoVersion = { ...row, version: undefined };
+        expect(rowToDiagram(rowNoVersion).version).toBe(1);
+    });
 });

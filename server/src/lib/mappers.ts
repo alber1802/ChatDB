@@ -8,6 +8,7 @@ export interface DiagramDto {
     name: string;
     databaseType: string;
     databaseEdition?: string;
+    version: number;
     createdAt: string;
     updatedAt: string;
     tables?: TableDto[];
@@ -104,6 +105,7 @@ export function rowToDiagram(row: Record<string, unknown>): DiagramDto {
         name: String(row.name),
         databaseType: String(row.database_type),
         databaseEdition: (row.database_edition as string) || undefined,
+        version: row.version != null ? Number(row.version) : 1,
         createdAt: new Date(String(row.created_at)).toISOString(),
         updatedAt: new Date(String(row.updated_at)).toISOString(),
     };
