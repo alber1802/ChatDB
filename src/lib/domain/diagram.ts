@@ -19,7 +19,7 @@ export interface Diagram {
     description?: string;
     databaseType: DatabaseType;
     databaseEdition?: DatabaseEdition;
-    version: number;
+    version?: number;
     tables?: DBTable[];
     relationships?: DBRelationship[];
     dependencies?: DBDependency[];
