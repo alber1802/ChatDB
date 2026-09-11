@@ -215,3 +215,23 @@ export const includeQuerySchema = z.object({
         .optional()
         .transform((v) => v === true || v === 'true'),
 });
+
+export const syncOperationSchema = z.object({
+    entity: z.enum([
+        'diagram',
+        'table',
+        'relationship',
+        'dependency',
+        'area',
+        'customType',
+        'note',
+    ]),
+    op: z.enum(['create', 'update', 'delete']),
+    id: z.string().min(1),
+    patch: z.record(z.string(), z.any()).optional(),
+});
+
+export const syncRequestSchema = z.object({
+    baseVersion: z.number().int().nonnegative(),
+    operations: z.array(syncOperationSchema).min(1).max(500),
+});
