@@ -45,6 +45,7 @@ export interface SyncOperation {
 
 export interface SyncRequest {
     baseVersion: number;
+    sessionId?: string;
     operations: SyncOperation[];
 }
 
@@ -267,14 +268,25 @@ export const syncService = {
         request: SyncRequest
     ): Promise<SyncResult> {
         const { rows } = await client.query(
-            `SELECT version FROM diagrams WHERE id = $1 FOR UPDATE`,
+            `SELECT version, last_sync_session_id FROM diagrams WHERE id = $1 FOR UPDATE`,
             [diagramId]
         );
         if (!rows[0]) {
             throw new AppError(404, 'Diagram not found', 'not_found');
         }
         const currentVersion = Number(rows[0].version ?? 1);
-        const isConflict = currentVersion !== request.baseVersion;
+        const lastSyncSessionId = (rows[0].last_sync_session_id ??
+            null) as string | null;
+        const versionMoved = currentVersion !== request.baseVersion;
+        // `version` is a single diagram-wide counter, not per row, so a
+        // mismatch alone doesn't mean another collaborator touched these
+        // rows — it also happens when THIS session retries a batch whose
+        // earlier ack was lost after the server had already applied it. Only
+        // treat it as a real conflict when a *different* session was the one
+        // that last moved the counter.
+        const isConflict =
+            versionMoved &&
+            (!request.sessionId || lastSyncSessionId !== request.sessionId);
 
         const ops = collapseOperations(request.operations);
         for (const op of ops) {
@@ -283,8 +295,8 @@ export const syncService = {
 
         const nextVersion = currentVersion + 1;
         await client.query(
-            `UPDATE diagrams SET version = $1, updated_at = now() WHERE id = $2`,
-            [nextVersion, diagramId]
+            `UPDATE diagrams SET version = $1, updated_at = now(), last_sync_session_id = $2 WHERE id = $3`,
+            [nextVersion, request.sessionId ?? null, diagramId]
         );
 
         return {

@@ -29,6 +29,7 @@ describe('SyncEngine', () => {
         vi.useFakeTimers();
         vi.mocked(apiFetch).mockReset();
         localStorage.clear();
+        sessionStorage.clear();
     });
 
     afterEach(() => {
@@ -488,6 +489,33 @@ describe('SyncEngine', () => {
         engine.destroy();
     });
 
+    // ─── identifies itself so the backend can tell a lost-ack retry from a
+    // real cross-session conflict (see sync.service.ts, last_sync_session_id) ──
+    it('sends a stable sessionId across a retry of the same batch', async () => {
+        vi.mocked(apiFetch)
+            .mockRejectedValueOnce(new Error('network blip'))
+            .mockResolvedValueOnce({ version: 2, conflicts: [] });
+        const engine = new SyncEngine({ diagramId: 'd1', initialVersion: 1 });
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { x: 1 },
+        });
+        await vi.advanceTimersByTimeAsync(700); // first attempt: fails
+        await vi.advanceTimersByTimeAsync(1000); // backoff elapses: retry succeeds
+
+        const bodies = vi
+            .mocked(apiFetch)
+            .mock.calls.map((call) =>
+                JSON.parse((call[1] as RequestInit).body as string)
+            );
+        expect(bodies).toHaveLength(2);
+        expect(bodies[0].sessionId).toEqual(expect.any(String));
+        expect(bodies[1].sessionId).toBe(bodies[0].sessionId);
+        engine.destroy();
+    });
+
     // ─── I7: deleteDiagram support — wipe every persisted trace ──────────
     it('clearPersistedQueue removes both the queue and the in-flight keys', async () => {
         let settle: (value: {
@@ -514,6 +542,9 @@ describe('SyncEngine', () => {
             id: 't2',
             patch: { x: 2 },
         });
+        // The localStorage mirror write is throttled (see
+        // schedulePersistQueue), so it lands a tick after enqueue().
+        await vi.advanceTimersByTimeAsync(150);
         expect(localStorage.getItem(QUEUE_KEY)).not.toBeNull();
         expect(localStorage.getItem(INFLIGHT_KEY)).not.toBeNull();
 

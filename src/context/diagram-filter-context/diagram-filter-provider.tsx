@@ -49,11 +49,29 @@ export const DiagramFilterProvider: React.FC<React.PropsWithChildren> = ({
     }, [tables, databaseType]);
 
     const diagramIdOfLoadedFilter = useRef<string | null>(null);
+    const updateFilterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+        null
+    );
 
     useEffect(() => {
         if (diagramId && diagramId === diagramIdOfLoadedFilter.current) {
-            updateDiagramFilter(diagramId, filter);
+            // Debounced: toggling several tables/schemas in quick succession
+            // (e.g. "show all") would otherwise fire one un-batched PUT per
+            // toggle, each serializing the full filter object.
+            if (updateFilterTimeoutRef.current) {
+                clearTimeout(updateFilterTimeoutRef.current);
+            }
+            updateFilterTimeoutRef.current = setTimeout(() => {
+                updateFilterTimeoutRef.current = null;
+                updateDiagramFilter(diagramId, filter);
+            }, 400);
         }
+        return () => {
+            if (updateFilterTimeoutRef.current) {
+                clearTimeout(updateFilterTimeoutRef.current);
+                updateFilterTimeoutRef.current = null;
+            }
+        };
     }, [diagramId, filter, updateDiagramFilter]);
 
     // Reset filter when diagram changes
@@ -83,13 +101,21 @@ export const DiagramFilterProvider: React.FC<React.PropsWithChildren> = ({
             }
 
             setLoading(false);
+            // Only now does `filter` reflect what was actually loaded (or a
+            // deliberate default) for this diagram. Stamping this ref
+            // earlier — before the fetch above resolves — let the
+            // persistence effect see `diagramId === diagramIdOfLoadedFilter`
+            // while `filter` still held the transient `{}` placeholder set
+            // below, so its debounced auto-save could fire first and
+            // silently overwrite the real saved filter with `{}` whenever
+            // this fetch took longer than that debounce.
+            diagramIdOfLoadedFilter.current = diagramId;
         };
 
         setFilter({});
 
         if (diagramId) {
             loadFilterFromStorage(diagramId);
-            diagramIdOfLoadedFilter.current = diagramId;
         }
     }, [diagramId, getDiagramFilter, schemas]);
 

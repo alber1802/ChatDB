@@ -97,7 +97,7 @@ describe('applyOperation — diagram patches', () => {
         const client = {
             query: vi.fn(async (sql: string) => {
                 if (sql.includes('SELECT version')) {
-                    return { rows: [{ version: 1 }] };
+                    return { rows: [{ version: 1, last_sync_session_id: null }] };
                 }
                 return { rows: [] };
             }),
@@ -112,5 +112,92 @@ describe('applyOperation — diagram patches', () => {
 
         // Antes del arreglo esto lanzaba ZodError y hacía rollback del batch.
         expect(result).toEqual({ version: 2, conflicts: [] });
+    });
+});
+
+// El contador `diagrams.version` es global al diagrama, no por fila. Un
+// reintento de la MISMA sesión (p.ej. el ack de un POST anterior se perdió
+// mientras el servidor ya lo había aplicado) hace que `baseVersion` del
+// cliente quede desfasado de `currentVersion` exactamente igual que si otra
+// sesión hubiese escrito — sin distinguir por sesión, ese reintento se
+// reportaba como "conflicto" (ver api-storage-provider.tsx:58, "Sync
+// conflicts overwritten by another session") aunque nadie más tocó el
+// diagrama.
+describe('syncService.apply — conflict detection is per-session, not just per-version', () => {
+    const clientReturning = (version: number, lastSyncSessionId: string | null) =>
+        ({
+            query: vi.fn(async (sql: string) => {
+                if (sql.includes('SELECT version')) {
+                    return {
+                        rows: [
+                            { version, last_sync_session_id: lastSyncSessionId },
+                        ],
+                    };
+                }
+                return { rows: [] };
+            }),
+        }) as unknown as PoolClient;
+
+    it('does NOT report a conflict when the version moved due to this same session retrying', async () => {
+        // El servidor ya está en version=2 por un write anterior de
+        // session-A cuyo ack el cliente nunca vio; reintenta con el
+        // baseVersion viejo (1) pero identificándose con la misma sesión.
+        const client = clientReturning(2, 'session-A');
+
+        const result = await syncService.apply(client, 'd1', 'u1', {
+            baseVersion: 1,
+            sessionId: 'session-A',
+            operations: [
+                { entity: 'table', op: 'update', id: 't1', patch: { x: 1 } },
+            ],
+        });
+
+        expect(result.conflicts).toEqual([]);
+    });
+
+    it('DOES report a conflict when the version moved due to a different session', async () => {
+        const client = clientReturning(2, 'session-B');
+
+        const result = await syncService.apply(client, 'd1', 'u1', {
+            baseVersion: 1,
+            sessionId: 'session-A',
+            operations: [
+                { entity: 'table', op: 'update', id: 't1', patch: { x: 1 } },
+            ],
+        });
+
+        expect(result.conflicts).toEqual([{ entity: 'table', id: 't1' }]);
+    });
+
+    it('falls back to the old coarse behavior when the client sends no sessionId', async () => {
+        const client = clientReturning(2, 'session-B');
+
+        const result = await syncService.apply(client, 'd1', 'u1', {
+            baseVersion: 1,
+            operations: [
+                { entity: 'table', op: 'update', id: 't1', patch: { x: 1 } },
+            ],
+        });
+
+        expect(result.conflicts).toEqual([{ entity: 'table', id: 't1' }]);
+    });
+
+    it('records the writer session id so the next request can compare against it', async () => {
+        const client = clientReturning(1, null);
+
+        await syncService.apply(client, 'd1', 'u1', {
+            baseVersion: 1,
+            sessionId: 'session-A',
+            operations: [
+                { entity: 'table', op: 'update', id: 't1', patch: { x: 1 } },
+            ],
+        });
+
+        const updateCall = (
+            client.query as unknown as ReturnType<typeof vi.fn>
+        ).mock.calls.find((call) =>
+            String(call[0]).includes('UPDATE diagrams')
+        );
+        expect(updateCall?.[1]).toEqual([2, 'session-A', 'd1']);
     });
 });

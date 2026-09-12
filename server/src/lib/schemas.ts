@@ -233,5 +233,6 @@ export const syncOperationSchema = z.object({
 
 export const syncRequestSchema = z.object({
     baseVersion: z.number().int().nonnegative(),
+    sessionId: z.string().min(1).max(100).optional(),
     operations: z.array(syncOperationSchema).min(1).max(500),
 });

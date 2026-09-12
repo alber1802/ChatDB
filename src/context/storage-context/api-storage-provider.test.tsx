@@ -356,6 +356,11 @@ describe('ApiStorageProvider + SyncEngine wiring', () => {
         act(() => {
             screen.getByRole('button').click(); // queues an update for t1
         });
+        // The localStorage mirror write is throttled (see
+        // SyncEngine.schedulePersistQueue), so it lands a tick after enqueue().
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(150);
+        });
         expect(localStorage.getItem('chartdb:sync-queue:d1')).not.toBeNull();
 
         await act(async () => {

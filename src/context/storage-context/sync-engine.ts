@@ -36,6 +36,7 @@ export interface SyncEngineOptions {
 
 const STORAGE_KEY_PREFIX = 'chartdb:sync-queue:';
 const INFLIGHT_KEY_PREFIX = 'chartdb:sync-inflight:';
+const SESSION_KEY_PREFIX = 'chartdb:sync-session:';
 
 // Tope duro de espera: por muy continua que sea la actividad del usuario
 // (escribir, arrastrar), el debounce no puede posponer el envío más allá de
@@ -108,6 +109,8 @@ export class SyncEngine {
     private readonly onConflict?: SyncEngineOptions['onConflict'];
     private readonly storageKey: string;
     private readonly inFlightKey: string;
+    private readonly sessionId: string;
+    private persistQueueTimer: ReturnType<typeof setTimeout> | null = null;
 
     constructor(options: SyncEngineOptions) {
         this.diagramId = options.diagramId;
@@ -118,6 +121,7 @@ export class SyncEngine {
         this.onConflict = options.onConflict;
         this.storageKey = `${STORAGE_KEY_PREFIX}${this.diagramId}`;
         this.inFlightKey = `${INFLIGHT_KEY_PREFIX}${this.diagramId}`;
+        this.sessionId = this.resolveSessionId();
         this.restoreQueue();
         this.attachLifecycleListeners();
         // Lo recuperado de localStorage (cola pendiente y/o un lote que se
@@ -128,6 +132,26 @@ export class SyncEngine {
         if (this.queue.size > 0) this.scheduleFlush();
     }
 
+    // Identifica esta pestaña/sesión ante el backend (ver last_sync_session_id
+    // en sync.service.ts) para que un reintento cuyo ack se perdió no se
+    // reporte como "otra sesión sobrescribió tus cambios" cuando en realidad
+    // fue esta misma sesión. Vive en sessionStorage (no localStorage): debe
+    // sobrevivir a un reload de ESTA pestaña pero seguir siendo distinto por
+    // pestaña, para que un conflicto real entre dos pestañas del mismo
+    // navegador se siga reportando.
+    private resolveSessionId(): string {
+        const key = `${SESSION_KEY_PREFIX}${this.diagramId}`;
+        try {
+            const existing = sessionStorage.getItem(key);
+            if (existing) return existing;
+            const id = crypto.randomUUID();
+            sessionStorage.setItem(key, id);
+            return id;
+        } catch {
+            return crypto.randomUUID();
+        }
+    }
+
     enqueue(operation: SyncOperation): void {
         const key = `${operation.entity}:${operation.id}`;
         const existing = this.queue.get(key);
@@ -136,7 +160,7 @@ export class SyncEngine {
             : operation;
         this.queue.set(key, merged);
         if (this.oldestQueuedAt === null) this.oldestQueuedAt = Date.now();
-        this.persistQueue();
+        this.schedulePersistQueue();
         this.scheduleFlush();
     }
 
@@ -227,6 +251,7 @@ export class SyncEngine {
 
         const body = JSON.stringify({
             baseVersion: this.version,
+            sessionId: this.sessionId,
             operations: batch,
         });
 
@@ -298,7 +323,24 @@ export class SyncEngine {
         }
     }
 
+    // `enqueue()` can fire on every animation frame (e.g. a table resize
+    // drags through many intermediate dimension changes) — writing the whole
+    // queue to localStorage synchronously on each call blocks the main
+    // thread proportionally to queue size for no benefit, since the mirror
+    // only needs to be reasonably fresh for crash recovery, not exact.
+    private schedulePersistQueue(): void {
+        if (this.persistQueueTimer) return;
+        this.persistQueueTimer = setTimeout(() => {
+            this.persistQueueTimer = null;
+            this.persistQueue();
+        }, 150);
+    }
+
     private persistQueue(): void {
+        if (this.persistQueueTimer) {
+            clearTimeout(this.persistQueueTimer);
+            this.persistQueueTimer = null;
+        }
         try {
             const serializable = [...this.queue.values()];
             if (serializable.length === 0) {
@@ -428,6 +470,10 @@ export class SyncEngine {
             clearTimeout(this.retryTimer);
             this.retryTimer = null;
         }
+        // Flush rather than drop: a pending throttled write must land before
+        // this engine goes away, or the mirror in localStorage would miss
+        // whatever was enqueued in the last 150ms.
+        if (this.persistQueueTimer) this.persistQueue();
         if (typeof window === 'undefined') return;
         window.removeEventListener('beforeunload', this.handleFlushTrigger);
         document.removeEventListener(
