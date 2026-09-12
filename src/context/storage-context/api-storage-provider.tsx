@@ -194,17 +194,36 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             id: string;
             attributes: Partial<Diagram>;
         }) => {
-            enqueue(id, 'diagram', 'update', id, {
-                name: attributes.name,
-                databaseType: attributes.databaseType,
-                databaseEdition: attributes.databaseEdition,
-            });
+            // Solo se envían las claves realmente presentes: la mayoría de
+            // llamadas (`updateDiagram({id, attributes: {updatedAt}})`) no
+            // traen ninguno de estos campos y, tras JSON.stringify, las claves
+            // undefined desaparecen dejando `patch: {}`. El backend rechaza un
+            // patch de diagrama vacío con ZodError, lo que abortaba la
+            // transacción completa del batch (nada se guardaba y la operación
+            // envenenada se reintentaba para siempre). `updatedAt` ya lo pone
+            // el servidor en cada /sync, así que no hay nada que enviar.
+            const patch = Object.fromEntries(
+                Object.entries({
+                    name: attributes.name,
+                    databaseType: attributes.databaseType,
+                    databaseEdition: attributes.databaseEdition,
+                }).filter(([, value]) => value !== undefined)
+            );
+            if (Object.keys(patch).length === 0) return;
+            enqueue(id, 'diagram', 'update', id, patch);
         },
         [enqueue]
     );
 
     const deleteDiagram = useCallback(async (id: string) => {
         await apiFetch(`/diagrams/${id}`, { method: 'DELETE' });
+        // El diagrama ya no existe: cualquier operación aún encolada para él
+        // solo puede producir 404s, backoff y un "Error al guardar" espurio.
+        if (engineRef.current?.diagramId === id) {
+            engineRef.current.clearPersistedQueue();
+            engineRef.current.destroy();
+            engineRef.current = null;
+        }
     }, []);
 
     // ─── Tables ─────────────────────────────────────────────────────────
@@ -224,6 +243,19 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             diagramId: string;
             id: string;
         }): Promise<DBTable | undefined> => {
+            // ─ read-your-own-writes ─────────────────────────────────────
+            // Los mutadores de chartdb-provider son read-modify-write sobre
+            // arrays completos (`fields`/`indexes` son columnas JSON enteras,
+            // así que cada escritura reemplaza el array entero). Antes del
+            // batching, `updateTable` esperaba al PATCH real, por lo que cada
+            // escritura era durable antes de la siguiente lectura. Ahora
+            // `updateTable` encola y resuelve al instante, así que una lectura
+            // dentro de la ventana de debounce podría traer una copia del
+            // servidor sin la edición aún encolada y descartarla en silencio
+            // al reescribir el array. Vaciar la cola antes de leer restaura la
+            // garantía anterior. (Mismo motivo en los otros cinco getters de
+            // entidad individual.)
+            await engineRef.current?.flushNow();
             try {
                 return await apiFetch<DBTable>(
                     `/diagrams/${diagramId}/tables/${id}`
@@ -266,6 +298,12 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     }, []);
 
     const deleteDiagramTables = useCallback(async (diagramId: string) => {
+        // Un create/update aún encolado para una de estas filas se enviaría
+        // DESPUÉS del DELETE masivo y resucitaría lo recién borrado. Vaciar la
+        // cola antes garantiza el orden correcto: primero las pendientes,
+        // luego el borrado que las supera. (Igual en los otros cinco borrados
+        // masivos.)
+        await engineRef.current?.flushNow();
         await apiFetch(`/diagrams/${diagramId}/tables`, { method: 'DELETE' });
     }, []);
 
@@ -298,6 +336,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             diagramId: string;
             id: string;
         }): Promise<DBRelationship | undefined> => {
+            // read-your-own-writes: ver la nota en getTable.
+            await engineRef.current?.flushNow();
             try {
                 return await apiFetch<DBRelationship>(
                     `/diagrams/${diagramId}/relationships/${id}`
@@ -347,6 +387,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
 
     const deleteDiagramRelationships = useCallback(
         async (diagramId: string) => {
+            // Ver la nota en deleteDiagramTables.
+            await engineRef.current?.flushNow();
             await apiFetch(`/diagrams/${diagramId}/relationships`, {
                 method: 'DELETE',
             });
@@ -383,6 +425,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             diagramId: string;
             id: string;
         }): Promise<DBDependency | undefined> => {
+            // read-your-own-writes: ver la nota en getTable.
+            await engineRef.current?.flushNow();
             try {
                 return await apiFetch<DBDependency>(
                     `/diagrams/${diagramId}/dependencies/${id}`
@@ -429,6 +473,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     }, []);
 
     const deleteDiagramDependencies = useCallback(async (diagramId: string) => {
+        // Ver la nota en deleteDiagramTables.
+        await engineRef.current?.flushNow();
         await apiFetch(`/diagrams/${diagramId}/dependencies`, {
             method: 'DELETE',
         });
@@ -451,6 +497,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             diagramId: string;
             id: string;
         }): Promise<Area | undefined> => {
+            // read-your-own-writes: ver la nota en getTable.
+            await engineRef.current?.flushNow();
             try {
                 return await apiFetch<Area>(
                     `/diagrams/${diagramId}/areas/${id}`
@@ -485,6 +533,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     }, []);
 
     const deleteDiagramAreas = useCallback(async (diagramId: string) => {
+        // Ver la nota en deleteDiagramTables.
+        await engineRef.current?.flushNow();
         await apiFetch(`/diagrams/${diagramId}/areas`, { method: 'DELETE' });
     }, []);
 
@@ -517,6 +567,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             diagramId: string;
             id: string;
         }): Promise<DBCustomType | undefined> => {
+            // read-your-own-writes: ver la nota en getTable.
+            await engineRef.current?.flushNow();
             try {
                 return await apiFetch<DBCustomType>(
                     `/diagrams/${diagramId}/custom-types/${id}`
@@ -563,6 +615,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     }, []);
 
     const deleteDiagramCustomTypes = useCallback(async (diagramId: string) => {
+        // Ver la nota en deleteDiagramTables.
+        await engineRef.current?.flushNow();
         await apiFetch(`/diagrams/${diagramId}/custom-types`, {
             method: 'DELETE',
         });
@@ -585,6 +639,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             diagramId: string;
             id: string;
         }): Promise<Note | undefined> => {
+            // read-your-own-writes: ver la nota en getTable.
+            await engineRef.current?.flushNow();
             try {
                 return await apiFetch<Note>(
                     `/diagrams/${diagramId}/notes/${id}`
@@ -619,6 +675,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     }, []);
 
     const deleteDiagramNotes = useCallback(async (diagramId: string) => {
+        // Ver la nota en deleteDiagramTables.
+        await engineRef.current?.flushNow();
         await apiFetch(`/diagrams/${diagramId}/notes`, { method: 'DELETE' });
     }, []);
 

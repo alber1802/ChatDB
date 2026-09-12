@@ -45,6 +45,7 @@ describe('ApiStorageProvider + SyncEngine wiring', () => {
     beforeEach(() => {
         vi.mocked(apiFetch).mockReset();
         vi.useFakeTimers();
+        localStorage.clear();
     });
 
     afterEach(() => {
@@ -155,5 +156,224 @@ describe('ApiStorageProvider + SyncEngine wiring', () => {
                 patch: { name: 'renamed' },
             },
         ]);
+    });
+
+    // ─── C1: an empty diagram patch poisons the whole batch ──────────────
+    describe('updateDiagram patch building', () => {
+        const mockApi = () =>
+            vi.mocked(apiFetch).mockImplementation(async (path: string) => {
+                if (path.endsWith('/sync')) {
+                    return { version: 2, conflicts: [] };
+                }
+                if (path.startsWith('/diagrams/')) {
+                    return { id: 'd1', version: 1, name: 'x' };
+                }
+                return undefined;
+            });
+
+        const syncCalls = () =>
+            vi.mocked(apiFetch).mock.calls.filter(([p]) => p.includes('/sync'));
+
+        it('enqueues nothing when only updatedAt changes (would send patch: {} and abort the whole batch)', async () => {
+            mockApi();
+            const storageRef: { current: StorageHandle | null } = {
+                current: null,
+            };
+            render(
+                <ApiStorageProvider>
+                    <Probe storageRef={storageRef} />
+                </ApiStorageProvider>
+            );
+            await act(async () => {
+                await storageRef.current!.getDiagram('d1');
+            });
+
+            // This is what almost every chartdb-provider mutator sends.
+            await act(async () => {
+                await storageRef.current!.updateDiagram({
+                    id: 'd1',
+                    attributes: { updatedAt: new Date() },
+                });
+            });
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(5000);
+            });
+
+            // `updatedAt` is applied server-side by /sync itself, so there is
+            // nothing meaningful to send — and sending `patch: {}` would make
+            // diagramPatchSchema throw and roll back the entire transaction.
+            expect(syncCalls()).toHaveLength(0);
+        });
+
+        it('enqueues only the attributes that are actually defined', async () => {
+            mockApi();
+            const storageRef: { current: StorageHandle | null } = {
+                current: null,
+            };
+            render(
+                <ApiStorageProvider>
+                    <Probe storageRef={storageRef} />
+                </ApiStorageProvider>
+            );
+            await act(async () => {
+                await storageRef.current!.getDiagram('d1');
+            });
+
+            await act(async () => {
+                await storageRef.current!.updateDiagram({
+                    id: 'd1',
+                    attributes: { name: 'nuevo', updatedAt: new Date() },
+                });
+            });
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(700);
+            });
+
+            const calls = syncCalls();
+            expect(calls).toHaveLength(1);
+            const body = JSON.parse(
+                (calls[0][1] as RequestInit).body as string
+            );
+            expect(body.operations).toEqual([
+                {
+                    entity: 'diagram',
+                    op: 'update',
+                    id: 'd1',
+                    patch: { name: 'nuevo' },
+                },
+            ]);
+            // Whatever ends up on the wire, a diagram patch is never empty.
+            for (const op of body.operations) {
+                if (op.entity === 'diagram') {
+                    expect(Object.keys(op.patch ?? {}).length).toBeGreaterThan(
+                        0
+                    );
+                }
+            }
+        });
+    });
+
+    // ─── C2: read-your-own-writes ────────────────────────────────────────
+    it('flushes pending writes before a single-entity read', async () => {
+        vi.mocked(apiFetch).mockImplementation(async (path: string) => {
+            if (path.endsWith('/sync')) return { version: 2, conflicts: [] };
+            if (path === '/diagrams/d1/tables/t1') {
+                return { id: 't1', name: 'renamed' };
+            }
+            if (path.startsWith('/diagrams/')) {
+                return { id: 'd1', version: 1, name: 'x' };
+            }
+            return undefined;
+        });
+
+        const storageRef: { current: StorageHandle | null } = { current: null };
+        render(
+            <ApiStorageProvider>
+                <Probe storageRef={storageRef} />
+            </ApiStorageProvider>
+        );
+        await act(async () => {
+            await storageRef.current!.getDiagram('d1');
+        });
+
+        act(() => {
+            screen.getByRole('button').click(); // queues an update for t1
+        });
+        // Still inside the debounce window: nothing sent yet.
+        expect(
+            vi.mocked(apiFetch).mock.calls.filter(([p]) => p.includes('/sync'))
+        ).toHaveLength(0);
+
+        await act(async () => {
+            await storageRef.current!.getTable({ diagramId: 'd1', id: 't1' });
+        });
+
+        const paths = vi.mocked(apiFetch).mock.calls.map(([p]) => p as string);
+        const syncIndex = paths.indexOf('/diagrams/d1/sync');
+        const readIndex = paths.indexOf('/diagrams/d1/tables/t1');
+        expect(syncIndex).toBeGreaterThanOrEqual(0);
+        // The queued write must reach the server BEFORE the read, or the
+        // read-modify-write mutators in chartdb-provider would rewrite the
+        // whole fields/indexes array from a stale copy.
+        expect(syncIndex).toBeLessThan(readIndex);
+    });
+
+    // ─── M11: a queued upsert must not resurrect a bulk-deleted row ──────
+    it('flushes pending writes before a bulk delete', async () => {
+        vi.mocked(apiFetch).mockImplementation(async (path: string) => {
+            if (path.endsWith('/sync')) return { version: 2, conflicts: [] };
+            if (path.startsWith('/diagrams/')) {
+                return { id: 'd1', version: 1, name: 'x' };
+            }
+            return undefined;
+        });
+
+        const storageRef: { current: StorageHandle | null } = { current: null };
+        render(
+            <ApiStorageProvider>
+                <Probe storageRef={storageRef} />
+            </ApiStorageProvider>
+        );
+        await act(async () => {
+            await storageRef.current!.getDiagram('d1');
+        });
+
+        act(() => {
+            screen.getByRole('button').click();
+        });
+
+        await act(async () => {
+            await storageRef.current!.deleteDiagramTables('d1');
+        });
+
+        const paths = vi.mocked(apiFetch).mock.calls.map(([p]) => p as string);
+        const syncIndex = paths.indexOf('/diagrams/d1/sync');
+        const deleteIndex = paths.lastIndexOf('/diagrams/d1/tables');
+        expect(syncIndex).toBeGreaterThanOrEqual(0);
+        expect(syncIndex).toBeLessThan(deleteIndex);
+    });
+
+    // ─── I7: deleteDiagram must tear down its engine ─────────────────────
+    it('destroys the engine and clears its persisted queue when its diagram is deleted', async () => {
+        vi.mocked(apiFetch).mockImplementation(async (path: string) => {
+            if (path.endsWith('/sync')) return { version: 2, conflicts: [] };
+            if (path.startsWith('/diagrams/')) {
+                return { id: 'd1', version: 1, name: 'x' };
+            }
+            return undefined;
+        });
+
+        const storageRef: { current: StorageHandle | null } = { current: null };
+        render(
+            <ApiStorageProvider>
+                <Probe storageRef={storageRef} />
+            </ApiStorageProvider>
+        );
+        await act(async () => {
+            await storageRef.current!.getDiagram('d1');
+        });
+
+        act(() => {
+            screen.getByRole('button').click(); // queues an update for t1
+        });
+        expect(localStorage.getItem('chartdb:sync-queue:d1')).not.toBeNull();
+
+        await act(async () => {
+            await storageRef.current!.deleteDiagram('d1');
+        });
+
+        expect(localStorage.getItem('chartdb:sync-queue:d1')).toBeNull();
+        expect(localStorage.getItem('chartdb:sync-inflight:d1')).toBeNull();
+
+        const before = vi
+            .mocked(apiFetch)
+            .mock.calls.filter(([p]) => p.includes('/sync')).length;
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(20000);
+        });
+        // No retries against a diagram that no longer exists.
+        expect(
+            vi.mocked(apiFetch).mock.calls.filter(([p]) => p.includes('/sync'))
+        ).toHaveLength(before);
     });
 });

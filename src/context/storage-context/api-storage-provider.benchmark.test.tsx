@@ -114,6 +114,27 @@ describe('sync engine benchmark: requests per edit burst', () => {
             .mocked(apiFetch)
             .mock.calls.filter(([p]) => (p as string).includes('/sync'));
         expect(syncCalls).toHaveLength(1);
+
+        // Counting requests alone would also pass if the batch silently
+        // dropped operations, so assert the payload really carries them: the
+        // 20 edits target `t0`..`t9`, and repeated edits to the same table are
+        // collapsed by id, so exactly 10 operations should go on the wire.
+        const body = JSON.parse(
+            (syncCalls[0][1] as RequestInit).body as string
+        );
+        expect(body.operations).toHaveLength(10);
+        expect(
+            [
+                ...new Set(body.operations.map((o: { id: string }) => o.id)),
+            ].sort()
+        ).toEqual(Array.from({ length: 10 }, (_, i) => `t${i}`).sort());
+        // Last write wins for each table.
+        const t0 = body.operations.find((o: { id: string }) => o.id === 't0');
+        expect(t0).toMatchObject({
+            entity: 'table',
+            op: 'update',
+            patch: { name: 'name-10' },
+        });
     });
 
     it('100 table creates (large import) still produce exactly 1 request', async () => {
@@ -135,5 +156,18 @@ describe('sync engine benchmark: requests per edit burst', () => {
             .mocked(apiFetch)
             .mock.calls.filter(([p]) => (p as string).includes('/sync'));
         expect(syncCalls).toHaveLength(1);
+
+        // 100 distinct ids, so nothing collapses: all 100 creates must be in
+        // the single batched payload.
+        const body = JSON.parse(
+            (syncCalls[0][1] as RequestInit).body as string
+        );
+        expect(body.operations).toHaveLength(100);
+        expect(
+            body.operations.every(
+                (o: { entity: string; op: string }) =>
+                    o.entity === 'table' && o.op === 'create'
+            )
+        ).toBe(true);
     });
 });
