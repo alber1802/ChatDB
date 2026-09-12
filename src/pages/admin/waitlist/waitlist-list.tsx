@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api-client';
+import { IS_API_ENABLED } from '@/lib/env';
 import { Card, CardContent, CardHeader } from '@/components/card/card';
 import { Badge } from '@/components/badge/badge';
 import { Button } from '@/components/button/button';
@@ -72,13 +74,20 @@ export const WaitlistList: React.FC = () => {
     const fetchEntries = useCallback(async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('waitlist')
-                .select('*')
-                .order('requested_at', { ascending: false });
+            if (IS_API_ENABLED) {
+                const data = await apiFetch<WaitlistEntry[]>(
+                    '/admin/waitlist'
+                );
+                setEntries(data ?? []);
+            } else {
+                const { data, error } = await supabase
+                    .from('waitlist')
+                    .select('*')
+                    .order('requested_at', { ascending: false });
 
-            if (error) throw error;
-            setEntries((data as WaitlistEntry[]) ?? []);
+                if (error) throw error;
+                setEntries((data as WaitlistEntry[]) ?? []);
+            }
         } catch (err) {
             console.error(err);
             notify.error('Error', 'No se pudieron cargar las solicitudes.');
@@ -111,28 +120,34 @@ export const WaitlistList: React.FC = () => {
     const handleApprove = async (entry: WaitlistEntry) => {
         setApprovingId(entry.id);
         try {
-            // 1. Invite user via Supabase Auth (sends email with magic link)
-            const { error: inviteError } =
-                await supabase.auth.admin.inviteUserByEmail(entry.email);
+            if (IS_API_ENABLED) {
+                await apiFetch(`/admin/waitlist/${entry.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status: 'approved' }),
+                });
+            } else {
+                const { error: inviteError } =
+                    await supabase.auth.admin.inviteUserByEmail(entry.email);
 
-            if (inviteError) {
-                // If user already exists, just mark as approved
-                if (!inviteError.message.includes('already been registered')) {
-                    throw inviteError;
+                if (inviteError) {
+                    if (
+                        !inviteError.message.includes('already been registered')
+                    ) {
+                        throw inviteError;
+                    }
                 }
+
+                const { error: updateError } = await supabase
+                    .from('waitlist')
+                    .update({
+                        status: 'approved',
+                        approved_at: new Date().toISOString(),
+                        approved_by: user?.id ?? null,
+                    })
+                    .eq('id', entry.id);
+
+                if (updateError) throw updateError;
             }
-
-            // 2. Update waitlist record
-            const { error: updateError } = await supabase
-                .from('waitlist')
-                .update({
-                    status: 'approved',
-                    approved_at: new Date().toISOString(),
-                    approved_by: user?.id ?? null,
-                })
-                .eq('id', entry.id);
-
-            if (updateError) throw updateError;
 
             notify.success(
                 'Acceso aprobado',
@@ -154,12 +169,19 @@ export const WaitlistList: React.FC = () => {
     // ── Reject action ────────────────────────────────────────────────────
     const handleReject = async (entry: WaitlistEntry) => {
         try {
-            const { error } = await supabase
-                .from('waitlist')
-                .update({ status: 'rejected' })
-                .eq('id', entry.id);
+            if (IS_API_ENABLED) {
+                await apiFetch(`/admin/waitlist/${entry.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status: 'rejected' }),
+                });
+            } else {
+                const { error } = await supabase
+                    .from('waitlist')
+                    .update({ status: 'rejected' })
+                    .eq('id', entry.id);
 
-            if (error) throw error;
+                if (error) throw error;
+            }
             notify.info('Solicitud rechazada', `${entry.email} fue rechazado.`);
             fetchEntries();
         } catch (err) {

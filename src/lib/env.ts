@@ -20,3 +20,8 @@ export const SUPABASE_ANON_KEY = (window?.env?.SUPABASE_ANON_KEY ??
     import.meta.env.VITE_SUPABASE_ANON_KEY ??
     '') as string;
 export const IS_SUPABASE_ENABLED = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+export const API_URL = (window?.env?.API_URL ??
+    import.meta.env.VITE_API_URL ??
+    '') as string;
+export const IS_API_ENABLED = !!API_URL;

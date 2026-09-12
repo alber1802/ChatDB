@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api-client';
+import { IS_API_ENABLED } from '@/lib/env';
 import { StatsGrid } from './stats-grid';
 import { RecentUsersCard } from './recent-users-card';
 import { RecentDiagramsCard } from './recent-diagrams-card';
@@ -26,7 +28,42 @@ export const AdminDashboard: React.FC = () => {
             try {
                 setLoading(true);
 
-                // Fetch Users through secure RPC
+                if (IS_API_ENABLED) {
+                    const data = await apiFetch<{
+                        usersTotal: number;
+                        confirmedUsers: number;
+                        diagramsTotal: number;
+                        tablesTotal: number;
+                        auditTotal: number;
+                        users: AdminUserProfile[];
+                        recentDiagrams: RecentDiagram[];
+                    }>('/admin/dashboard');
+
+                    setStats({
+                        totalUsers: data.usersTotal,
+                        confirmedUsers: data.confirmedUsers,
+                        totalDiagrams: data.diagramsTotal,
+                        totalTables: data.tablesTotal,
+                        totalAuditLogs: data.auditTotal,
+                    });
+                    setRecentUsers((data.users || []).slice(0, 5));
+                    const mappedDiagrams = (data.recentDiagrams || []).map(
+                        (d) => {
+                            const owner = data.users.find(
+                                (u) => u.id === d.user_id
+                            );
+                            return {
+                                ...d,
+                                user_email: owner
+                                    ? owner.email
+                                    : 'Usuario Desconocido',
+                            };
+                        }
+                    );
+                    setRecentDiagrams(mappedDiagrams);
+                    return;
+                }
+
                 const { data: usersData, error: usersError } =
                     await supabase.rpc('get_admin_users');
                 if (usersError) throw usersError;
@@ -36,19 +73,16 @@ export const AdminDashboard: React.FC = () => {
                     (u) => u.email_confirmed_at !== null
                 ).length;
 
-                // Fetch Diagrams count
                 const { count: diagramsCount, error: dError } = await supabase
                     .from('diagrams')
                     .select('*', { count: 'exact', head: true });
                 if (dError) throw dError;
 
-                // Fetch Tables count
                 const { count: tablesCount, error: tError } = await supabase
                     .from('db_tables')
                     .select('*', { count: 'exact', head: true });
                 if (tError) throw tError;
 
-                // Fetch Audit Logs count
                 const { count: logsCount, error: lError } = await supabase
                     .from('audit_logs')
                     .select('*', { count: 'exact', head: true });
@@ -62,10 +96,8 @@ export const AdminDashboard: React.FC = () => {
                     totalAuditLogs: logsCount || 0,
                 });
 
-                // Set 5 most recent users
                 setRecentUsers(users.slice(0, 5));
 
-                // Fetch 5 most recent diagrams
                 const { data: diagrams, error: diagError } = await supabase
                     .from('diagrams')
                     .select('id, name, updated_at, user_id')
@@ -100,7 +132,6 @@ export const AdminDashboard: React.FC = () => {
 
     return (
         <div className="flex select-none flex-col gap-y-6 font-primary">
-            {/* Header */}
             <div>
                 <h2 className="text-2xl font-bold tracking-tight text-foreground">
                     Dashboard General
@@ -110,10 +141,8 @@ export const AdminDashboard: React.FC = () => {
                 </p>
             </div>
 
-            {/* Stats Grid */}
             <StatsGrid stats={stats} loading={loading} />
 
-            {/* Recent Activity Grid */}
             <div className="grid gap-6 md:grid-cols-2">
                 <RecentUsersCard users={recentUsers} loading={loading} />
                 <RecentDiagramsCard

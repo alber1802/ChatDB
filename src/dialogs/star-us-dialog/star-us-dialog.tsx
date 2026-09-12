@@ -10,10 +10,9 @@ import {
     DialogTitle,
 } from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
-import StarUs from '@/assets/star-us.gif';
+import { Star } from 'lucide-react';
 import type { BaseDialogProps } from '../common/base-dialog-props';
 import { useTranslation } from 'react-i18next';
-import { ZoomableImage } from '@/components/zoomable-image/zoomable-image';
 import { useLocalConfig } from '@/hooks/use-local-config';
 
 export interface StarUsDialogProps extends BaseDialogProps {}
@@ -48,8 +47,11 @@ export const StarUsDialog: React.FC<StarUsDialogProps> = ({ dialog }) => {
                         {t('star_us_dialog.description')}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="flex">
-                    <ZoomableImage src={StarUs} />
+                <div className="flex items-center justify-center py-6">
+                    <Star
+                        className="size-24 animate-bounce fill-yellow-400 text-yellow-400"
+                        strokeWidth={1.5}
+                    />
                 </div>
                 <DialogFooter className="flex gap-1 md:justify-between">
                     <DialogClose asChild>

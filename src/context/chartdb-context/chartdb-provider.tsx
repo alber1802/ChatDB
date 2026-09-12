@@ -537,6 +537,13 @@ export const ChartDBProvider: React.FC<
 
             const prevTables = deepCopy(tables);
             const updatedTables = updateTables(tables);
+            // The raw (possibly partial) shape the caller returned, before
+            // it gets merged into full table objects for local state below.
+            // Sent to the server as-is so a drag/resize patches only the
+            // fields that actually changed instead of re-serializing every
+            // column (fields, indexes, checkConstraints…) of every moved
+            // table on each drop.
+            const rawUpdates = updateFn(tables);
 
             const tablesToDelete = prevTables.filter(
                 (table) => !updatedTables.some((t) => t.id === table.id)
@@ -584,13 +591,8 @@ export const ChartDBProvider: React.FC<
             });
 
             const promises = [];
-            for (const updatedTable of updatedTables) {
-                promises.push(
-                    db.putTable({
-                        diagramId,
-                        table: updatedTable,
-                    })
-                );
+            for (const { id, ...attributes } of rawUpdates) {
+                promises.push(db.updateTable({ id, attributes }));
             }
 
             for (const table of tablesToDelete) {
@@ -659,6 +661,7 @@ export const ChartDBProvider: React.FC<
             options = { updateHistory: true }
         ) => {
             const prevField = getField(tableId, fieldId);
+            const currentTable = getTable(tableId);
 
             const updateTableFn = (table: DBTable) => {
                 const updatedTable: DBTable = {
@@ -685,8 +688,7 @@ export const ChartDBProvider: React.FC<
                 })
             );
 
-            const table = await db.getTable({ diagramId, id: tableId });
-            if (!table) {
+            if (!currentTable) {
                 return;
             }
 
@@ -697,7 +699,7 @@ export const ChartDBProvider: React.FC<
                 db.updateTable({
                     id: tableId,
                     attributes: {
-                        ...updateTableFn(table),
+                        ...updateTableFn(currentTable),
                     },
                 }),
             ]);
@@ -715,7 +717,15 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setTables, addUndoAction, resetRedoStack, getField]
+        [
+            db,
+            diagramId,
+            setTables,
+            addUndoAction,
+            resetRedoStack,
+            getField,
+            getTable,
+        ]
     );
 
     const removeField: ChartDBContext['removeField'] = useCallback(
@@ -737,7 +747,8 @@ export const ChartDBProvider: React.FC<
                 return updatedTable;
             };
 
-            const fields = getTable(tableId)?.fields ?? [];
+            const currentTable = getTable(tableId);
+            const fields = currentTable?.fields ?? [];
             const prevField = getField(tableId, fieldId);
             setTables((tables) =>
                 tables.map((table) => {
@@ -758,8 +769,7 @@ export const ChartDBProvider: React.FC<
                 },
             });
 
-            const table = await db.getTable({ diagramId, id: tableId });
-            if (!table) {
+            if (!currentTable) {
                 return;
             }
 
@@ -770,7 +780,7 @@ export const ChartDBProvider: React.FC<
                 db.updateTable({
                     id: tableId,
                     attributes: {
-                        ...updateTableFn(table),
+                        ...updateTableFn(currentTable),
                     },
                 }),
             ]);
@@ -830,17 +840,9 @@ export const ChartDBProvider: React.FC<
                 },
             });
 
-            const table = await db.getTable({ diagramId, id: tableId });
-
-            if (!table) {
-                return;
-            }
-
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
-            await Promise.all([
-                db.updateDiagram({ id: diagramId, attributes: { updatedAt } }),
-            ]);
+            await db.updateDiagram({ id: diagramId, attributes: { updatedAt } });
 
             if (options.updateHistory) {
                 addUndoAction({
@@ -896,6 +898,7 @@ export const ChartDBProvider: React.FC<
             index: DBIndex,
             options = { updateHistory: true }
         ) => {
+            const currentTable = getTable(tableId);
             setTables((tables) =>
                 tables.map((table) =>
                     table.id === tableId
@@ -904,8 +907,7 @@ export const ChartDBProvider: React.FC<
                 )
             );
 
-            const dbTable = await db.getTable({ diagramId, id: tableId });
-            if (!dbTable) {
+            if (!currentTable) {
                 return;
             }
 
@@ -916,8 +918,8 @@ export const ChartDBProvider: React.FC<
                 db.updateTable({
                     id: tableId,
                     attributes: {
-                        ...dbTable,
-                        indexes: [...dbTable.indexes, index],
+                        ...currentTable,
+                        indexes: [...currentTable.indexes, index],
                     },
                 }),
             ]);
@@ -931,7 +933,7 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setTables, addUndoAction, resetRedoStack]
+        [db, diagramId, setTables, addUndoAction, resetRedoStack, getTable]
     );
 
     const removeIndex: ChartDBContext['removeIndex'] = useCallback(
@@ -941,6 +943,7 @@ export const ChartDBProvider: React.FC<
             options = { updateHistory: true }
         ) => {
             const prevIndex = getIndex(tableId, indexId);
+            const currentTable = getTable(tableId);
             setTables((tables) =>
                 tables.map((table) =>
                     table.id === tableId
@@ -954,12 +957,7 @@ export const ChartDBProvider: React.FC<
                 )
             );
 
-            const dbTable = await db.getTable({
-                diagramId,
-                id: tableId,
-            });
-
-            if (!dbTable) {
+            if (!currentTable) {
                 return;
             }
 
@@ -970,8 +968,8 @@ export const ChartDBProvider: React.FC<
                 db.updateTable({
                     id: tableId,
                     attributes: {
-                        ...dbTable,
-                        indexes: dbTable.indexes.filter(
+                        ...currentTable,
+                        indexes: currentTable.indexes.filter(
                             (i) => i.id !== indexId
                         ),
                     },
@@ -987,7 +985,15 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setTables, addUndoAction, resetRedoStack, getIndex]
+        [
+            db,
+            diagramId,
+            setTables,
+            addUndoAction,
+            resetRedoStack,
+            getIndex,
+            getTable,
+        ]
     );
 
     const createIndex: ChartDBContext['createIndex'] = useCallback(
@@ -1016,6 +1022,7 @@ export const ChartDBProvider: React.FC<
             options = { updateHistory: true }
         ) => {
             const prevIndex = getIndex(tableId, indexId);
+            const currentTable = getTable(tableId);
             setTables((tables) =>
                 tables.map((table) =>
                     table.id === tableId
@@ -1029,9 +1036,7 @@ export const ChartDBProvider: React.FC<
                 )
             );
 
-            const dbTable = await db.getTable({ diagramId, id: tableId });
-
-            if (!dbTable) {
+            if (!currentTable) {
                 return;
             }
 
@@ -1042,8 +1047,8 @@ export const ChartDBProvider: React.FC<
                 db.updateTable({
                     id: tableId,
                     attributes: {
-                        ...dbTable,
-                        indexes: dbTable.indexes.map((i) =>
+                        ...currentTable,
+                        indexes: currentTable.indexes.map((i) =>
                             i.id === indexId ? { ...i, ...index } : i
                         ),
                     },
@@ -1059,7 +1064,15 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setTables, addUndoAction, resetRedoStack, getIndex]
+        [
+            db,
+            diagramId,
+            setTables,
+            addUndoAction,
+            resetRedoStack,
+            getIndex,
+            getTable,
+        ]
     );
 
     const addCheckConstraint: ChartDBContext['addCheckConstraint'] =
@@ -1069,6 +1082,7 @@ export const ChartDBProvider: React.FC<
                 constraint: DBCheckConstraint,
                 options = { updateHistory: true }
             ) => {
+                const currentTable = getTable(tableId);
                 setTables((tables) =>
                     tables.map((t) =>
                         t.id === tableId
@@ -1083,8 +1097,7 @@ export const ChartDBProvider: React.FC<
                     )
                 );
 
-                const dbTable = await db.getTable({ diagramId, id: tableId });
-                if (!dbTable) {
+                if (!currentTable) {
                     return;
                 }
 
@@ -1098,9 +1111,9 @@ export const ChartDBProvider: React.FC<
                     db.updateTable({
                         id: tableId,
                         attributes: {
-                            ...dbTable,
+                            ...currentTable,
                             checkConstraints: [
-                                ...(dbTable.checkConstraints ?? []),
+                                ...(currentTable.checkConstraints ?? []),
                                 constraint,
                             ],
                         },
@@ -1116,7 +1129,14 @@ export const ChartDBProvider: React.FC<
                     resetRedoStack();
                 }
             },
-            [db, diagramId, setTables, addUndoAction, resetRedoStack]
+            [
+                db,
+                diagramId,
+                setTables,
+                addUndoAction,
+                resetRedoStack,
+                getTable,
+            ]
         );
 
     const createCheckConstraint: ChartDBContext['createCheckConstraint'] =
@@ -1142,8 +1162,8 @@ export const ChartDBProvider: React.FC<
                 constraintId: string,
                 options = { updateHistory: true }
             ) => {
-                const table = getTable(tableId);
-                const prevConstraint = table?.checkConstraints?.find(
+                const currentTable = getTable(tableId);
+                const prevConstraint = currentTable?.checkConstraints?.find(
                     (c) => c.id === constraintId
                 );
 
@@ -1160,8 +1180,7 @@ export const ChartDBProvider: React.FC<
                     )
                 );
 
-                const dbTable = await db.getTable({ diagramId, id: tableId });
-                if (!dbTable) {
+                if (!currentTable) {
                     return;
                 }
 
@@ -1175,9 +1194,9 @@ export const ChartDBProvider: React.FC<
                     db.updateTable({
                         id: tableId,
                         attributes: {
-                            ...dbTable,
+                            ...currentTable,
                             checkConstraints: (
-                                dbTable.checkConstraints ?? []
+                                currentTable.checkConstraints ?? []
                             ).filter((c) => c.id !== constraintId),
                         },
                     }),
@@ -1203,8 +1222,8 @@ export const ChartDBProvider: React.FC<
                 constraint: Partial<DBCheckConstraint>,
                 options = { updateHistory: true }
             ) => {
-                const table = getTable(tableId);
-                const prevConstraint = table?.checkConstraints?.find(
+                const currentTable = getTable(tableId);
+                const prevConstraint = currentTable?.checkConstraints?.find(
                     (c) => c.id === constraintId
                 );
 
@@ -1225,8 +1244,7 @@ export const ChartDBProvider: React.FC<
                     )
                 );
 
-                const dbTable = await db.getTable({ diagramId, id: tableId });
-                if (!dbTable) {
+                if (!currentTable) {
                     return;
                 }
 
@@ -1240,9 +1258,9 @@ export const ChartDBProvider: React.FC<
                     db.updateTable({
                         id: tableId,
                         attributes: {
-                            ...dbTable,
+                            ...currentTable,
                             checkConstraints: (
-                                dbTable.checkConstraints ?? []
+                                currentTable.checkConstraints ?? []
                             ).map((c) =>
                                 c.id === constraintId
                                     ? { ...c, ...constraint }

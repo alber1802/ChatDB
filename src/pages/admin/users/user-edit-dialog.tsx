@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api-client';
+import { IS_API_ENABLED } from '@/lib/env';
 import {
     Dialog,
     DialogContent,
@@ -57,28 +59,41 @@ export const UserEditDialog: React.FC<UserEditDialogProps> = ({
 
         try {
             // Update display name in user_profiles
-            const { error: profileError } = await supabase
-                .from('user_profiles')
-                .update({ display_name: displayName })
-                .eq('user_id', user.id);
+            if (IS_API_ENABLED) {
+                await apiFetch(`/admin/users/${user.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        displayName,
+                        ...(user.role_id !== roleId &&
+                        currentUserRole === 'super_admin'
+                            ? { roleId }
+                            : {}),
+                    }),
+                });
+            } else {
+                const { error: profileError } = await supabase
+                    .from('user_profiles')
+                    .update({ display_name: displayName })
+                    .eq('user_id', user.id);
 
-            if (profileError) throw profileError;
+                if (profileError) throw profileError;
 
-            // Only update role if it has changed AND current user is super_admin
-            if (user.role_id !== roleId) {
-                if (currentUserRole !== 'super_admin') {
-                    throw new Error(
-                        'Solo los Super Administradores pueden cambiar roles.'
-                    );
-                }
-                const { error: roleError } = await supabase.rpc(
-                    'assign_user_role',
-                    {
-                        target_user_id: user.id,
-                        target_role_id: roleId,
+                // Only update role if it has changed AND current user is super_admin
+                if (user.role_id !== roleId) {
+                    if (currentUserRole !== 'super_admin') {
+                        throw new Error(
+                            'Solo los Super Administradores pueden cambiar roles.'
+                        );
                     }
-                );
-                if (roleError) throw roleError;
+                    const { error: roleError } = await supabase.rpc(
+                        'assign_user_role',
+                        {
+                            target_user_id: user.id,
+                            target_role_id: roleId,
+                        }
+                    );
+                    if (roleError) throw roleError;
+                }
             }
 
             onSuccess();

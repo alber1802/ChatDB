@@ -22,7 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
+.claude/*
+.agents
+.mcp.json
 .env
 .env.docker
+server/.env
 stats/

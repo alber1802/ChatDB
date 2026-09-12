@@ -78,22 +78,22 @@ Use the [cloud version](https://app.chartdb.io?ref=github_readme_2) or deploy lo
 ### How To Use
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ### Build
 
 ```bash
-npm install
-npm run build
+pnpm install
+pnpm build
 ```
 
 Or like this if you want to have AI capabilities:
 
 ```bash
-npm install
-VITE_OPENAI_API_KEY=<YOUR_OPEN_AI_KEY> npm run build
+pnpm install
+VITE_OPENAI_API_KEY=<YOUR_OPEN_AI_KEY> pnpm build
 ```
 
 ### Run the Docker Container

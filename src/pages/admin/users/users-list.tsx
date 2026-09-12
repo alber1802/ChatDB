@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api-client';
+import { IS_API_ENABLED } from '@/lib/env';
 import { Card, CardContent, CardHeader } from '@/components/card/card';
 import { Input } from '@/components/input/input';
 import { Skeleton } from '@/components/skeleton/skeleton';
@@ -72,10 +74,19 @@ export const UsersList: React.FC = () => {
             closeLabel: 'Cancelar',
             onAction: async () => {
                 try {
-                    const { error } = await supabase.rpc('delete_user_data', {
-                        target_user_id: user.id,
-                    });
-                    if (error) throw error;
+                    if (IS_API_ENABLED) {
+                        await apiFetch(`/admin/users/${user.id}`, {
+                            method: 'DELETE',
+                        });
+                    } else {
+                        const { error } = await supabase.rpc(
+                            'delete_user_data',
+                            {
+                                target_user_id: user.id,
+                            }
+                        );
+                        if (error) throw error;
+                    }
                     refetch();
                 } catch (err: unknown) {
                     console.error('Error deleting user:', err);
@@ -95,12 +106,22 @@ export const UsersList: React.FC = () => {
 
     const handleUnblockClick = async (user: AdminUserProfile) => {
         try {
-            const { error } = await supabase
-                .from('user_profiles')
-                .update({ is_blocked: false, login_fail_count: 0 })
-                .eq('user_id', user.id);
+            if (IS_API_ENABLED) {
+                await apiFetch(`/admin/users/${user.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        isBlocked: false,
+                        blockedReason: null,
+                    }),
+                });
+            } else {
+                const { error } = await supabase
+                    .from('user_profiles')
+                    .update({ is_blocked: false, login_fail_count: 0 })
+                    .eq('user_id', user.id);
 
-            if (error) throw error;
+                if (error) throw error;
+            }
 
             // Clear localStorage flag so the client can attempt login again
             localStorage.removeItem(`blocked_${user.email}`);

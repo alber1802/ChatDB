@@ -400,7 +400,11 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 });
             }, 500)();
         }
-    }, [isInitialLoadingNodes, fitView]);
+        // Also re-fit when the visibility filter changes (e.g. "show all
+        // tables"): with onlyRenderVisibleElements, a table that was hidden
+        // and is now shown only mounts (and registers its field handles)
+        // once it is actually brought into the viewport.
+    }, [isInitialLoadingNodes, filter, fitView]);
 
     useEffect(() => {
         // Force React Flow to re-register handles for all table nodes
@@ -410,8 +414,34 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
             updateNodeInternals(tableNodeIds);
         }
 
-        // Delay edge creation to ensure handles are registered
-        const timeoutId = setTimeout(() => {
+        let cancelled = false;
+        let rafId: number;
+
+        // Wait for the real condition (handles registered) instead of a
+        // fixed delay: a flat timeout races both normal mount time (scales
+        // with table/field count) and the viewport fitView above, which can
+        // still be animating when a filter change reveals many tables at
+        // once. Nodes hidden by the diagram filter are excluded since they
+        // never mount and would otherwise stall this wait indefinitely.
+        const handlesReady = () =>
+            tableNodeIds.every((id) => {
+                const node = getInternalNode(id);
+                return node?.hidden || node?.internals.handleBounds != null;
+            });
+
+        const waitStartedAt = Date.now();
+        const maxWaitMs = 2000;
+
+        const buildEdgesWhenReady = () => {
+            if (cancelled) return;
+            if (
+                !handlesReady() &&
+                Date.now() - waitStartedAt < maxWaitMs
+            ) {
+                rafId = requestAnimationFrame(buildEdgesWhenReady);
+                return;
+            }
+
             const isTableVisible = (tableId: string) => {
                 const table = tables.find((t) => t.id === tableId);
                 if (!table) return false;
@@ -440,25 +470,35 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                     isTableVisible(d.tableId)
             );
 
-            const targetIndexes: Record<string, number> =
-                visibleRelationships.reduce(
-                    (acc, relationship) => {
-                        acc[
-                            `${relationship.targetTableId}${relationship.targetFieldId}`
-                        ] = 0;
-                        return acc;
-                    },
-                    {} as Record<string, number>
-                );
+            // Target-handle indices must be assigned from the FULL
+            // relationships/dependencies lists, not just the visible subset:
+            // table-node-field.tsx and table-node-dependency-indicator.tsx
+            // render exactly one target handle per ALL-relationships count
+            // for that field/table (they have no notion of "visible"). If we
+            // instead numbered only the currently-visible ones, hiding any
+            // table sharing that target would shift the remaining indices
+            // past the handle count actually rendered, which is what caused
+            // React Flow's "Couldn't create edge for target handle id"
+            // (error#008) during load, when tables/filter are still
+            // settling. Assigning each relationship/dependency a fixed index
+            // by its position in the full list guarantees index < rendered
+            // handle count always, regardless of what's currently visible.
+            const targetIndexes = new Map<string, number>();
+            const relationshipTargetIndex = new Map<string, number>();
+            relationships.forEach((relationship) => {
+                const key = relationship.targetFieldId;
+                const index = targetIndexes.get(key) ?? 0;
+                relationshipTargetIndex.set(relationship.id, index);
+                targetIndexes.set(key, index + 1);
+            });
 
-            const targetDepIndexes: Record<string, number> =
-                visibleDependencies.reduce(
-                    (acc, dep) => {
-                        acc[dep.tableId] = 0;
-                        return acc;
-                    },
-                    {} as Record<string, number>
-                );
+            const targetDepIndexes = new Map<string, number>();
+            const dependencyTargetIndex = new Map<string, number>();
+            dependencies.forEach((dep) => {
+                const index = targetDepIndexes.get(dep.tableId) ?? 0;
+                dependencyTargetIndex.set(dep.id, index);
+                targetDepIndexes.set(dep.tableId, index + 1);
+            });
 
             setEdges((prevEdges) => {
                 // Create a map of previous edge states to preserve selection
@@ -480,7 +520,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                                 source: relationship.sourceTableId,
                                 target: relationship.targetTableId,
                                 sourceHandle: `${LEFT_HANDLE_ID_PREFIX}${relationship.sourceFieldId}`,
-                                targetHandle: `${TARGET_ID_PREFIX}${targetIndexes[`${relationship.targetTableId}${relationship.targetFieldId}`]++}_${relationship.targetFieldId}`,
+                                targetHandle: `${TARGET_ID_PREFIX}${relationshipTargetIndex.get(relationship.id)}_${relationship.targetFieldId}`,
                                 type: 'relationship-edge',
                                 data: { relationship },
                                 selected: prevState?.selected ?? false,
@@ -495,7 +535,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                             source: dep.dependentTableId,
                             target: dep.tableId,
                             sourceHandle: `${TOP_SOURCE_HANDLE_ID_PREFIX}${dep.dependentTableId}`,
-                            targetHandle: `${TARGET_DEP_PREFIX}${targetDepIndexes[dep.tableId]++}_${dep.tableId}`,
+                            targetHandle: `${TARGET_DEP_PREFIX}${dependencyTargetIndex.get(dep.id)}_${dep.tableId}`,
                             type: 'dependency-edge',
                             data: { dependency: dep },
                             hidden: !showDBViews,
@@ -505,9 +545,14 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                     }),
                 ];
             });
-        }, 100); // Delay to let handles register after updateNodeInternals
+        };
 
-        return () => clearTimeout(timeoutId);
+        rafId = requestAnimationFrame(buildEdgesWhenReady);
+
+        return () => {
+            cancelled = true;
+            cancelAnimationFrame(rafId);
+        };
     }, [
         relationships,
         dependencies,
@@ -515,6 +560,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
         showDBViews,
         tables,
         updateNodeInternals,
+        getInternalNode,
         filter,
         databaseType,
         shouldForceShowTable,
@@ -1714,9 +1760,6 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                     maxZoom={5}
                     minZoom={0.1}
                     onConnect={onConnectHandler}
-                    proOptions={{
-                        hideAttribution: true,
-                    }}
                     fitView={false}
                     nodeTypes={nodeTypes}
                     edgeTypes={edgeTypes}

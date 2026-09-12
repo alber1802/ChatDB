@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import TimeAgo from 'timeago-react';
 import { useChartDB } from '@/hooks/use-chartdb';
+import { useSyncStatus } from '@/hooks/use-sync-status';
 import { Badge } from '@/components/badge/badge';
 import {
     Tooltip,
@@ -10,7 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { LocaleFunc } from 'timeago.js';
 import { register as registerLocale } from 'timeago.js';
-import { Save } from 'lucide-react';
+import { Save, Loader2, AlertTriangle, WifiOff } from 'lucide-react';
 
 export interface LastSavedProps {}
 
@@ -74,6 +75,7 @@ const timeAgolocaleFromLanguage = async (
 
 export const LastSaved: React.FC<LastSavedProps> = () => {
     const { currentDiagram } = useChartDB();
+    const { status, errorMessage, retry } = useSyncStatus();
     const { i18n } = useTranslation();
     const [language, setLanguage] = useState<string>('en_US');
 
@@ -89,6 +91,49 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
 
         updateLocale();
     }, [i18n.language]);
+
+    if (status === 'saving') {
+        return (
+            <Badge
+                variant="secondary"
+                className="flex gap-1.5 whitespace-nowrap"
+            >
+                <Loader2 size={16} className="animate-spin" />
+                <span>Guardando…</span>
+            </Badge>
+        );
+    }
+
+    if (status === 'offline') {
+        return (
+            <Badge
+                variant="secondary"
+                className="flex gap-1.5 whitespace-nowrap"
+            >
+                <WifiOff size={16} />
+                <span>Sin conexión</span>
+            </Badge>
+        );
+    }
+
+    if (status === 'error') {
+        return (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button onClick={retry} type="button">
+                        <Badge
+                            variant="destructive"
+                            className="flex gap-1.5 whitespace-nowrap"
+                        >
+                            <AlertTriangle size={16} />
+                            <span>Error al guardar</span>
+                        </Badge>
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent>{errorMessage ?? 'Reintentar'}</TooltipContent>
+            </Tooltip>
+        );
+    }
 
     return (
         <Tooltip>
