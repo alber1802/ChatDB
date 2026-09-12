@@ -96,7 +96,7 @@ async function ignoreNotFound(fn: () => Promise<void>): Promise<void> {
     }
 }
 
-async function applyOperation(
+export async function applyOperation(
     client: PoolClient,
     diagramId: string,
     userId: string,
@@ -105,7 +105,14 @@ async function applyOperation(
     switch (op.entity) {
         case 'diagram': {
             if (op.op !== 'update') return;
-            const patch = diagramPatchSchema.parse(op.patch ?? {});
+            // Un patch de diagrama vacío no tiene nada que aplicar, pero
+            // `diagramPatchSchema` lo rechaza con ZodError, lo que abortaría
+            // la transacción entera del batch (ninguna operación se guardaría
+            // y el cliente reintentaría el lote envenenado para siempre). Se
+            // trata como no-op: `updated_at`/`version` ya los actualiza
+            // syncService.apply al final del batch.
+            if (!op.patch || Object.keys(op.patch).length === 0) return;
+            const patch = diagramPatchSchema.parse(op.patch);
             await diagramsService.update(client, diagramId, patch);
             return;
         }
