@@ -1,127 +1,217 @@
-# 🚀 Guía de Despliegue Automatizada y Simplificada con Docker
+# 🚀 Guía de Despliegue con Docker — Frontend + Backend en Heroku
 
-## Versión 2.0 — Arquitectura Limpia (Sin entrypoint.sh)
+## Versión 3.0 — Dos apps separadas (frontend + backend)
 
-Esta documentación detalla el flujo moderno y optimizado para compilar, empaquetar y desplegar la aplicación **ChatDB** tanto en entornos locales de Docker como en la infraestructura de producción de Heroku, integrando de forma segura las variables de entorno de Supabase sin recurrir a scripts intermediarios complejos.
+Desde que se agregó el backend propio (`server/`), **esto ya no es una sola
+app**. Son dos servicios independientes, cada uno con su propio Dockerfile,
+su propia app de Heroku, y sus propias variables de entorno:
 
-### Resumen del Cambio de Arquitectura
-Se eliminó por completo el archivo `entrypoint.sh` y la inyección por consola mediante `--build-arg`. Ahora, Nginx utiliza su motor nativo de plantillas para leer el puerto dinámico de Heroku, y Vite absorbe de forma segura todas las credenciales desde el archivo local estructurado `.env.docker` en tiempo de compilación.
+| App | Qué es | Heroku app | Dockerfile |
+| :--- | :--- | :--- | :--- |
+| **Frontend** | React/Vite compilado, servido por Nginx | `chatdb-alber` | `Dockerfile` (raíz) |
+| **Backend** | API Express + Postgres | `chatdb-alber-api` | `server/Dockerfile` |
+
+El frontend le habla al backend **directo, cross-origin**, vía
+`VITE_API_URL` (horneado en el bundle en build-time). El backend acepta ese
+origen vía `CORS_ORIGIN`. No hay proxy de por medio.
+
+> Existe también un mecanismo de proxy nginx `/api/` → `API_UPSTREAM` en
+> `default.conf.template`, pensado originalmente para correr todo en un
+> solo dyno (same-origin). **No es el camino usado actualmente** — con
+> `VITE_API_URL` seteado, el frontend llama directo al backend y ese proxy
+> queda sin uso. Se documenta acá por si en el futuro se decide consolidar
+> a un solo dyno.
 
 ---
 
-## 1. Configuración de Archivos del Sistema
+## ⚠️ Gotcha #1: la conexión a Postgres DEBE ser vía el Transaction Pooler
 
-### 1.1 Archivo de Credenciales Seguras (`.env.docker`)
-Este archivo se ubica en la raíz del proyecto. Debe contener todas las variables necesarias para el Frontend. Al compilarse dentro de la etapa intermedia de Docker, queda incrustado de manera estática en el bundle sin exponerse en los logs externos.
+Supabase ofrece dos formas de conectarse a Postgres:
 
-**Contenido de ejemplo para `.env.docker`:**
+- **Directa** (`db.<ref>.supabase.co:5432`) — **resuelve solo a IPv6**.
+  Heroku (y la mayoría de redes Docker) no tiene salida IPv6, así que toda
+  query falla con `Network unreachable`. El health check del backend
+  (`/health`) devuelve `{"status":"degraded","db":"down"}` sin loggear el
+  motivo real (el error se traga a propósito para no filtrar detalles de
+  conexión).
+- **Transaction pooler** (`aws-<N>-<region>.pooler.supabase.com:6543`) — sí
+  tiene IPv4. **Esta es la que hay que usar.**
+
+El número de nodo (`aws-0-`, `aws-1-`, `aws-2-`...) y la región son
+**específicos de cada proyecto de Supabase** — no son un valor fijo, y
+adivinarlos falla con `FATAL: tenant/user ... not found` aunque el host
+resuelva y el puerto esté abierto. Sacá la cadena exacta de:
+
+**Supabase Dashboard → tu proyecto → Project Settings → Database → Connect
+→ pestaña "Transaction pooler"**
+
+Esa pantalla te da el usuario `postgres.<ref>` — **cambialo por
+`app_backend.<ref>`** (mismo sufijo, mismo password que ya tenías) para
+seguir usando el rol de bajo privilegio y no romper la impersonación RLS:
+
+```
+postgresql://app_backend.<PROJECT_REF>:<PASSWORD>@aws-<N>-<region>.pooler.supabase.com:6543/postgres
+```
+
+## ⚠️ Gotcha #2: `server/.dockerignore` es obligatorio
+
+Sin él, `COPY . .` en `server/Dockerfile` sobreescribe el `node_modules`
+recién instalado (Linux, dentro del contenedor) con el `node_modules` local
+de tu máquina (Windows) si existe — y los symlinks/junctions de pnpm en
+Windows no son válidos en Linux. Resultado: `tsc` falla con decenas de
+`Cannot find module 'express'` / `Cannot find name 'process'` aunque los
+paquetes estén perfectamente instalados. Ya existe `server/.dockerignore`
+en el repo excluyendo `node_modules`, `dist`, `.env*` — si lo borrás sin
+querer, el build del backend se rompe así.
+
+---
+
+## 1. Configuración de archivos
+
+### 1.1 Frontend — `.env.docker` (raíz del proyecto, gitignored)
+
 ```env
 VITE_SUPABASE_URL=https://yburqxpgzcymdyolbiqg.supabase.co
-VITE_SUPABASE_ANON_KEY=tu_anon_key_real_aqui
+VITE_SUPABASE_ANON_KEY=<tu anon key>
 VITE_DISABLE_ANALYTICS=true
+VITE_API_URL=https://chatdb-alber-api-XXXXXXXXXXXX.herokuapp.com
 ```
 
-> 🔒 **Nota de Seguridad**: Este archivo está incluido en `.gitignore` para prevenir que credenciales reales sean expuestas en repositorios de control de versiones.
+`VITE_API_URL` debe apuntar a la URL pública de la app de Heroku del
+backend (`heroku apps:info --app chatdb-alber-api` la muestra). Se
+compila dentro del bundle — cambiarla requiere reconstruir la imagen.
 
-### 1.2 Plantilla de Servidor Nginx (`default.conf.template`)
-Configuración limpia que permite a las rutas de React funcionar correctamente bajo el enrutador de Vite (SPA) y mapea dinámicamente el puerto asignado.
+### 1.2 Backend — variables de entorno (Heroku config vars, NO van en git)
 
-```nginx
-server {
-    listen       ${PORT};
-    listen  [::]:${PORT};
+Ver `server/.env.example` para la lista completa. Las críticas para
+producción: `DATABASE_URL` (pooler, ver Gotcha #1), `SUPABASE_JWT_SECRET`,
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `CORS_ORIGIN` (la URL del frontend).
 
-    location / {
-        root   /usr/share/nginx/html;
-        index  index.html index.htm;
-        # Esto es vital para que las rutas de React/Vite funcionen
-        try_files  $uri $uri/ /index.html;
-    }
+### 1.3 Dockerfiles
 
-    error_page   500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
-    }
-}
-```
+Ambos son multi-stage y ya están en el repo tal cual — no deberían
+necesitar tocarse para un deploy normal:
 
-### 1.3 Dockerfile de Producción Optimizado (`Dockerfile`)
-Estructura multi-stage que utiliza Node 22 para compilar y Nginx Stable Alpine para servir los archivos estáticos.
-
-```dockerfile
-# ─── Stage 1: Build ───────────────────────────────────────────────────────────
-FROM node:22-alpine AS builder
-
-RUN corepack enable && corepack prepare pnpm@10 --activate
-
-WORKDIR /usr/src/app
-
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-
-COPY . .
-
-# Inyectamos las credenciales de forma segura
-COPY .env.docker .env
-
-RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm exec vite build
-
-# ─── Stage 2: Production (nginx) ──────────────────────────────────────────────
-FROM nginx:stable-alpine AS production
-
-COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
-
-# La imagen de Nginx procesará automáticamente los templates puestos en esta carpeta
-COPY ./default.conf.template /etc/nginx/templates/default.conf.template
-
-# Puerto por defecto para Docker local (Heroku lo sobrescribirá)
-ENV PORT=80
-EXPOSE 80
-
-# Usamos el comando nativo de Nginx
-CMD ["nginx", "-g", "daemon off;"]
-```
+- **`Dockerfile`** (raíz): `node:22-alpine` compila con Vite → copia
+  `dist/` a `nginx:stable-alpine`, sirviendo estático + template de
+  `default.conf.template`.
+- **`server/Dockerfile`**: `node:22-alpine` compila con `tsc` → stage de
+  producción reinstala solo `dependencies` (`--prod`) y corre
+  `node dist/server.js`. Heroku inyecta `$PORT` en runtime, el server ya
+  lo respeta (`env.PORT`).
 
 ---
 
-## 2. Flujo de Automatización del IDE (Git + Despliegue)
+## 2. Primera vez: crear la app de backend en Heroku
 
-Para simplificar las tareas repetitivas, puedes integrar una secuencia única en la terminal integrada de tu IDE (VS Code, Cursor, etc.) o configurar un script personalizado.
+Si `chatdb-alber-api` no existe todavía:
 
-### Paso A: Corregir Estilo y Commitear en Git
-Antes del commit, ejecuta el linter para corregir de forma automática los detalles de formato y evitar que fallen los hooks de Husky:
+```bash
+heroku create chatdb-alber-api
+heroku stack:set container --app chatdb-alber-api
+```
+
+Configurar sus variables (nunca las pegues literales en el historial de
+la shell si podés evitarlo — mejor cargarlas desde tu `.env` local):
+
+```bash
+cd server
+set -a && source .env && set +a
+heroku config:set --app chatdb-alber-api \
+  NODE_ENV=production \
+  CORS_ORIGIN=https://chatdb-alber-XXXXXXXXXXXX.herokuapp.com \
+  DATABASE_URL="$DATABASE_URL" \
+  SUPABASE_JWT_SECRET="$SUPABASE_JWT_SECRET" \
+  SUPABASE_URL="$SUPABASE_URL" \
+  SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+cd ..
+```
+
+Y en el frontend, apuntar al backend recién creado:
+
+```bash
+heroku config:set --app chatdb-alber \
+  API_UPSTREAM=https://chatdb-alber-api-XXXXXXXXXXXX.herokuapp.com
+```
+
+(`API_UPSTREAM` es para el proxy nginx opcional del Gotcha de arriba — no
+hace falta si usás `VITE_API_URL`, pero no molesta dejarlo seteado.)
+
+---
+
+## 3. Flujo de despliegue
+
+### Paso A: build local de verificación (recomendado antes de cada release)
+
+```bash
+# Frontend
+docker build -t chatdb-frontend:local .
+
+# Backend
+cd server && docker build -t chatdb-backend:local . && cd ..
+```
+
+Si alguno falla, revisá los dos Gotchas de arriba antes que nada.
+
+### Paso B: Git
+
 ```bash
 pnpm run lint:fix
 git add .
-git commit -m "chore: simplificacion de arquitectura docker y remocion de entrypoint"
+git commit -m "chore: deploy"
 git push origin main
 ```
 
-### Paso B: Despliegue en Heroku Container Registry
-Al haber unificado las variables dentro de `.env.docker`, ya no es necesario escapar cadenas largas de caracteres especiales de Supabase en la consola.
+### Paso C: build + push + release — Frontend
 
-#### 1. Construir la imagen con compatibilidad para Heroku Registry:
 ```bash
 docker buildx build --provenance=false --load --no-cache -t registry.heroku.com/chatdb-alber/web .
-```
-
-#### 2. Subir imagen al registro:
-```bash
 docker push registry.heroku.com/chatdb-alber/web
-```
-
-#### 3. Publicar la versión en Heroku:
-```bash
 heroku container:release web --app chatdb-alber
 ```
 
+### Paso D: build + push + release — Backend
+
+```bash
+cd server
+docker buildx build --provenance=false --load --no-cache -t registry.heroku.com/chatdb-alber-api/web .
+docker push registry.heroku.com/chatdb-alber-api/web
+heroku container:release web --app chatdb-alber-api
+cd ..
+```
+
+> El backend no tiene por qué desplegarse cada vez que cambia el frontend
+> (y viceversa) — son releases independientes. Solo hace falta reconstruir
+> y subir el que realmente cambió.
+
 ---
 
-## 3. Comandos de Gestión Rápida
+## 4. Verificación post-deploy
 
-| Entorno Objetivo | Técnico / Acción | Comando Ejecutable |
+```bash
+curl https://chatdb-alber-api-XXXXXXXXXXXX.herokuapp.com/health
+# Esperado: {"status":"ok","db":"up"}
+# Si sale {"status":"degraded","db":"down"}: revisar Gotcha #1 (DATABASE_URL)
+
+curl -I https://chatdb-alber-XXXXXXXXXXXX.herokuapp.com/
+# Esperado: 200, sirviendo el index.html del SPA
+```
+
+Abrí el frontend en el navegador, iniciá sesión, y confirmá en la pestaña
+Network que las requests a `/diagrams`, `/auth/login`, etc. van al dominio
+del backend (no 404 contra el dominio del frontend).
+
+---
+
+## 5. Comandos de gestión rápida
+
+| Entorno Objetivo | Acción | Comando |
 | :--- | :--- | :--- |
 | **Linter** | Corregir estilo automático | `pnpm run lint:fix` |
-| **Docker Local** | Construcción limpia | `docker build --no-cache -t chatdb:latest .` |
-| **Docker Local** | Levantar contenedor | `docker run -d --name chatdb -p 8080:80 chatdb:latest` |
-| **Heroku** | Monitorear logs en vivo | `heroku logs --tail --app chatdb-alber` |
+| **Frontend local** | Build limpio | `docker build --no-cache -t chatdb-frontend:latest .` |
+| **Frontend local** | Levantar contenedor | `docker run -d --name chatdb-frontend -p 8080:80 chatdb-frontend:latest` |
+| **Backend local** | Build limpio | `cd server && docker build --no-cache -t chatdb-backend:latest .` |
+| **Backend local** | Levantar contenedor | `docker run -d --name chatdb-backend --env-file server/.env -p 3001:3001 chatdb-backend:latest` |
+| **Heroku** | Logs del frontend | `heroku logs --tail --app chatdb-alber` |
+| **Heroku** | Logs del backend | `heroku logs --tail --app chatdb-alber-api` |
+| **Heroku** | Ver config vars | `heroku config --app chatdb-alber-api` |

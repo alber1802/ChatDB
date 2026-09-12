@@ -1,0 +1,36 @@
+# Build artifacts
+node_modules
+dist
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+
+# Local environment files — real secrets live only in Heroku config vars /
+# `docker run --env-file`, never baked into the image.
+.env
+.env.*
+
+# Docker config files themselves
+Dockerfile
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# IDE and editor settings
+.vscode/
+.idea/
+
+# Tests and documentation
+test/
+*.md
+
+# Temporary and OS files
+*.swp
+*.swo
+*.DS_Store
+*.log
+*.tmp
+coverage
