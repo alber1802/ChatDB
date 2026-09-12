@@ -92,6 +92,10 @@ export class SyncEngine {
     private flushTimer: ReturnType<typeof setTimeout> | null = null;
     private retryTimer: ReturnType<typeof setTimeout> | null = null;
     private inFlight = false;
+    // Se resuelve cuando termina el envío en curso (con éxito o error). Permite
+    // que quien llame a flushNow() durante un envío espere a que ese envío
+    // acabe en vez de volver de inmediato dejando escrituras sin confirmar.
+    private inFlightDone: Promise<void> | null = null;
     private retryCount = 0;
     private destroyed = false;
     private version: number;
@@ -189,13 +193,27 @@ export class SyncEngine {
             clearTimeout(this.retryTimer);
             this.retryTimer = null;
         }
-        if (this.inFlight || this.queue.size === 0) return;
+        if (this.inFlight) {
+            // Los llamantes de flushNow() (lecturas de una sola entidad,
+            // borrados masivos) necesitan que TODO lo pendiente haya llegado al
+            // servidor cuando esta promesa resuelva. Volver aquí sin esperar
+            // dejaría el envío en curso sin confirmar y reabriría, en una
+            // ventana más estrecha, la misma carrera de lectura obsoleta.
+            await this.inFlightDone;
+            if (this.queue.size === 0) return;
+            return this.flushNow();
+        }
+        if (this.queue.size === 0) return;
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
             this.notifyStatus('offline');
             return;
         }
 
         this.inFlight = true;
+        let releaseInFlight: () => void = () => {};
+        this.inFlightDone = new Promise<void>((resolve) => {
+            releaseInFlight = resolve;
+        });
         this.notifyStatus('saving');
 
         const batch = [...this.queue.values()];
@@ -273,6 +291,8 @@ export class SyncEngine {
             }
         } finally {
             this.inFlight = false;
+            this.inFlightDone = null;
+            releaseInFlight();
             if (this.queue.size > 0 && this.retryCount === 0) {
                 this.scheduleFlush();
             }

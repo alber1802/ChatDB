@@ -222,6 +222,61 @@ describe('SyncEngine', () => {
         engine.destroy();
     });
 
+    // ─── C2 support: flushNow must not return while a send is unconfirmed ─
+    it('waits for an in-flight send, then flushes anything queued meanwhile', async () => {
+        const settlers: Array<(v: { version: number; conflicts: [] }) => void> =
+            [];
+        vi.mocked(apiFetch).mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    settlers.push(resolve as (typeof settlers)[number]);
+                }) as never
+        );
+        const engine = new SyncEngine({ diagramId: 'd1', initialVersion: 1 });
+
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { x: 1 },
+        });
+        await vi.advanceTimersByTimeAsync(700); // request 1 is now in flight
+        expect(apiFetch).toHaveBeenCalledTimes(1);
+
+        // A second edit lands while request 1 is still unconfirmed. A reader
+        // calling flushNow() now must not return before both are on the server.
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't2',
+            patch: { y: 2 },
+        });
+        let settled = false;
+        const pending = engine.flushNow().then(() => {
+            settled = true;
+        });
+
+        await vi.advanceTimersByTimeAsync(0);
+        expect(settled).toBe(false); // still waiting on request 1
+
+        settlers[0]({ version: 2, conflicts: [] });
+        await vi.advanceTimersByTimeAsync(0);
+        expect(apiFetch).toHaveBeenCalledTimes(2); // t2 went out straight away
+        expect(settled).toBe(false); // and we wait for that one too
+
+        settlers[1]({ version: 3, conflicts: [] });
+        await pending;
+        expect(settled).toBe(true);
+
+        const second = JSON.parse(
+            (vi.mocked(apiFetch).mock.calls[1][1] as RequestInit).body as string
+        );
+        expect(second.operations).toEqual([
+            { entity: 'table', op: 'update', id: 't2', patch: { y: 2 } },
+        ]);
+        engine.destroy();
+    });
+
     // ─── I3: the in-flight batch must survive an unload / crash ──────────
     it('sends the batch with keepalive so it survives tab unload', async () => {
         vi.mocked(apiFetch).mockResolvedValue({ version: 2, conflicts: [] });
