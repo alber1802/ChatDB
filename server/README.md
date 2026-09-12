@@ -22,19 +22,19 @@ Health check: `GET http://localhost:3001/health`
 
 ## Scripts (siempre pnpm)
 
-| Comando | Descripción |
-|---|---|
-| `pnpm dev` | API en watch mode |
-| `pnpm build` | Compila a `dist/` |
-| `pnpm start` | Corre `dist/server.js` |
-| `pnpm test` | Unit + isolation (isolation requiere INTEGRATION=1) |
-| `pnpm typecheck` | TypeScript sin emitir |
+| Comando          | Descripción                                         |
+| ---------------- | --------------------------------------------------- |
+| `pnpm dev`       | API en watch mode                                   |
+| `pnpm build`     | Compila a `dist/`                                   |
+| `pnpm start`     | Corre `dist/server.js`                              |
+| `pnpm test`      | Unit + isolation (isolation requiere INTEGRATION=1) |
+| `pnpm typecheck` | TypeScript sin emitir                               |
 
 ## Seguridad
 
 - Cada request autenticado abre una transacción con:
-  - `SET LOCAL ROLE authenticated`
-  - `set_config('request.jwt.claim.sub', uid, true)`
+    - `SET LOCAL ROLE authenticated`
+    - `set_config('request.jwt.claim.sub', uid, true)`
 - RLS de Postgres sigue siendo la fuente de verdad (owner / shares / admin).
 - El rol de conexión `app_backend` es `NOINHERIT` + `NOBYPASSRLS` → fail-closed si se olvida el `SET LOCAL ROLE`.
 - Login endurecido en `POST /auth/login` (cooldown + bloqueo server-side; Redis opcional).
@@ -72,3 +72,16 @@ alternativas. Antes de desplegar:
 4. Confirmar en el indicador de la barra superior ("Guardando…/Guardado/Error/
    Sin conexión") que la sincronización funciona antes de anunciar el cambio
    a los usuarios.
+
+Dos consecuencias a tener en cuenta:
+
+- **Ya no hay flujo anónimo.** Al desaparecer Dexie/IndexedDB y el acceso
+  directo a Supabase, toda la persistencia pasa por la API autenticada: abrir
+  un diagrama de ejemplo o empezar uno nuevo sin iniciar sesión ya no es
+  posible. Es una consecuencia aceptada en el documento de diseño
+  (`docs/superpowers/specs/2026-09-10-sync-engine-design.md`), no un fallo.
+- **El paso 1 no es opcional.** Si se despliega la API sin haber aplicado la
+  migración de la columna `version`, el `SELECT version ... FOR UPDATE` de
+  `POST /diagrams/:id/sync` falla y ninguna edición se guarda: el cliente
+  reencola el lote y el indicador se queda en error. Aplicar la migración
+  antes de desplegar la API.
