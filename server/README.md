@@ -59,9 +59,16 @@ docker run --env-file .env -p 3001:3001 chartdb-api
 
 Variables de entorno mínimas: `DATABASE_URL`, `SUPABASE_JWT_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `CORS_ORIGIN`.
 
-## Rollout gradual
+## Rollout
 
-1. Desplegar API sin `VITE_API_URL` en el frontend (fallback Supabase directo).
-2. Activar `VITE_API_URL` para un usuario de prueba.
-3. Activar para todos; mantener `SupabaseStorageProvider` como fallback.
-4. Cuando esté estable, se pueden retirar llamadas directas `supabase.from/rpc` del frontend.
+El backend es ahora la única fuente de persistencia: no existen ya
+`SupabaseStorageProvider` ni almacenamiento local (Dexie/IndexedDB) como
+alternativas. Antes de desplegar:
+
+1. Aplicar `server/sql/2026-09-10-diagrams-add-version-column.sql` contra la
+   base de datos de producción.
+2. Desplegar la API con el endpoint `POST /diagrams/:id/sync`.
+3. Desplegar el frontend con `VITE_API_URL` apuntando a la API.
+4. Confirmar en el indicador de la barra superior ("Guardando…/Guardado/Error/
+   Sin conexión") que la sincronización funciona antes de anunciar el cambio
+   a los usuarios.
