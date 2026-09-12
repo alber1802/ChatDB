@@ -21,14 +21,18 @@
 
 ---
 
+
+
 ### Task 1: Columna `version` en `diagrams` + mappers
 
 **Files:**
+
 - Create: `server/sql/2026-09-10-diagrams-add-version-column.sql`
 - Modify: `server/src/lib/mappers.ts:6-19` (`DiagramDto`), `:101-110` (`rowToDiagram`)
 - Test: `server/test/mappers.test.ts`
 
 **Interfaces:**
+
 - Produces: `DiagramDto.version: number`, `rowToDiagram(row).version`.
 
 - [ ] **Step 1: Escribir el SQL de la migración suelta**
@@ -40,7 +44,7 @@
 ALTER TABLE diagrams ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1;
 ```
 
-- [ ] **Step 2: Escribir el test que falla para `rowToDiagram` con `version`**
+- [ ] **Step 2: Escribir el test que falla para** `rowToDiagram` **con** `version`
 
 Añadir al final de `server/test/mappers.test.ts`:
 
@@ -68,7 +72,7 @@ it('reads version from a diagram row, defaulting to 1', () => {
 Run: `cd server && pnpm test -- mappers.test.ts`
 Expected: FAIL — `diagram.version` es `undefined`, no `3`.
 
-- [ ] **Step 4: Añadir `version` a `DiagramDto` y a `rowToDiagram`**
+- [ ] **Step 4: Añadir** `version` **a** `DiagramDto` **y a** `rowToDiagram`
 
 En `server/src/lib/mappers.ts:6-19`, añadir el campo:
 
@@ -122,13 +126,17 @@ git commit -m "feat(server): add diagrams.version column and mapper support"
 
 ---
 
+
+
 ### Task 2: Esquemas Zod del batch de sincronización
 
 **Files:**
+
 - Modify: `server/src/lib/schemas.ts`
 - Test: `server/test/schemas.test.ts` (crear)
 
 **Interfaces:**
+
 - Produces: `syncOperationSchema`, `syncRequestSchema` (usados por Task 3 y Task 4).
 
 - [ ] **Step 1: Escribir el test que falla**
@@ -212,17 +220,21 @@ git commit -m "feat(server): add zod schemas for the sync batch endpoint"
 
 ---
 
+
+
 ### Task 3: `syncService` — lógica pura de colapso de operaciones
 
 **Files:**
+
 - Create: `server/src/modules/sync/sync.service.ts`
 - Test: `server/test/sync.service.test.ts`
 
 **Interfaces:**
+
 - Consumes: `diagramsService` de `server/src/modules/diagrams/diagrams.service.ts` (Task 4 lo usa vía `applyOperation`, definido en este mismo archivo).
 - Produces: `collapseOperations(operations: SyncOperation[]): SyncOperation[]`, tipos `SyncEntity`, `SyncOp`, `SyncOperation`, `SyncRequest`, `SyncConflict`, `SyncResult`, y `syncService.apply(client, diagramId, userId, request)` (usado por Task 4).
 
-- [ ] **Step 1: Escribir el test que falla para `collapseOperations`**
+- [ ] **Step 1: Escribir el test que falla para** `collapseOperations`
 
 ```ts
 // server/test/sync.service.test.ts
@@ -273,7 +285,7 @@ describe('collapseOperations', () => {
 Run: `cd server && pnpm test -- sync.service.test.ts`
 Expected: FAIL — el módulo no existe.
 
-- [ ] **Step 3: Implementar `sync.service.ts` (tipos + colapso + aplicación transaccional)**
+- [ ] **Step 3: Implementar** `sync.service.ts` **(tipos + colapso + aplicación transaccional)**
 
 ```ts
 // server/src/modules/sync/sync.service.ts
@@ -521,6 +533,8 @@ export const syncService = {
 
 - [ ] **Step 4: Ejecutar y verificar que pasa**
 
+
+
 Run: `cd server && pnpm test -- sync.service.test.ts`
 Expected: PASS
 
@@ -538,13 +552,17 @@ git commit -m "feat(server): add transactional sync batch service"
 
 ---
 
+
+
 ### Task 4: Endpoint `POST /diagrams/:id/sync`
 
 **Files:**
+
 - Modify: `server/src/modules/diagrams/diagrams.routes.ts`
 - Test: `server/test/integration/sync.test.ts` (crear, gateado por `INTEGRATION=1`, mismo patrón que `server/test/integration/isolation.test.ts`)
 
 **Interfaces:**
+
 - Consumes: `syncRequestSchema` (Task 2), `syncService.apply` (Task 3), `withUserContext` (`server/src/config/db.ts:28`).
 - Produces: ruta `POST /diagrams/:id/sync` — consumida por el frontend en Task 6.
 
@@ -675,12 +693,16 @@ git commit -m "feat(server): expose POST /diagrams/:id/sync"
 
 ---
 
+
+
 ### Task 5: `Diagram.version` en el dominio del frontend
 
 **Files:**
+
 - Modify: `src/lib/domain/diagram.ts`
 
 **Interfaces:**
+
 - Produces: `Diagram.version: number` (consumido por Task 6/7).
 
 - [ ] **Step 1: Añadir el campo al tipo y al esquema**
@@ -735,13 +757,17 @@ git commit -m "feat: add version field to the Diagram domain type"
 
 ---
 
+
+
 ### Task 6: `SyncEngine` — cola, debounce y colapso (frontend)
 
 **Files:**
+
 - Create: `src/context/storage-context/sync-engine.ts`
 - Test: `src/context/storage-context/sync-engine.test.ts`
 
 **Interfaces:**
+
 - Consumes: `apiFetch` de `src/lib/api-client.ts`.
 - Produces: `SyncEngine` class, `SyncEntity`, `SyncOp`, `SyncOperation`, `SyncStatus` (usados por Task 7, 8, 9).
 
@@ -814,7 +840,7 @@ describe('SyncEngine', () => {
 Run: `pnpm vitest run src/context/storage-context/sync-engine.test.ts`
 Expected: FAIL — el módulo no existe.
 
-- [ ] **Step 3: Implementar `sync-engine.ts`**
+- [ ] **Step 3: Implementar** `sync-engine.ts`
 
 ```ts
 // src/context/storage-context/sync-engine.ts
@@ -1063,6 +1089,8 @@ export class SyncEngine {
 
 - [ ] **Step 4: Ejecutar y verificar que pasa**
 
+
+
 Run: `pnpm vitest run src/context/storage-context/sync-engine.test.ts`
 Expected: PASS
 
@@ -1110,13 +1138,17 @@ git commit -m "feat: add SyncEngine with batching, retry and offline queueing"
 
 ---
 
+
+
 ### Task 7: `sync-status-context` (estado de UI, separado del estado de servidor)
 
 **Files:**
+
 - Create: `src/context/sync-status-context/sync-status-context.tsx`
 - Create: `src/hooks/use-sync-status.ts`
 
 **Interfaces:**
+
 - Consumes: `SyncStatus` de `src/context/storage-context/sync-engine.ts` (Task 6).
 - Produces: `syncStatusContext`, `useSyncStatus()` — consumido por Task 8 (para publicar el estado) y Task 11 (para leerlo en la UI).
 
@@ -1163,12 +1195,16 @@ git commit -m "feat: add sync-status-context for UI-level save state"
 
 ---
 
+
+
 ### Task 8: Reescribir `ApiStorageProvider` sobre `SyncEngine`
 
 **Files:**
+
 - Modify: `src/context/storage-context/api-storage-provider.tsx`
 
 **Interfaces:**
+
 - Consumes: `SyncEngine`, `collapseOperations` (Task 6); `syncStatusContext` (Task 7); `apiFetch`, `buildIncludeQuery` (`src/lib/api-client.ts`, sin cambios); `StorageContext` (`src/context/storage-context/storage-context.tsx`, sin cambios de tipo).
 - Produces: `ApiStorageProvider` ahora envuelve también `syncStatusContext.Provider` — usado por Task 9 (retirar los otros providers) y Task 11 (indicador visual).
 
@@ -1253,7 +1289,7 @@ describe('ApiStorageProvider + SyncEngine wiring', () => {
 Run: `pnpm vitest run src/context/storage-context/api-storage-provider.test.tsx`
 Expected: FAIL — hoy `updateTable` llama `apiFetch` directamente y de forma inmediata (`/tables/t1`, no `/sync`).
 
-- [ ] **Step 3: Reescribir `api-storage-provider.tsx`**
+- [ ] **Step 3: Reescribir** `api-storage-provider.tsx`
 
 Reemplazar el contenido completo del archivo:
 
@@ -1868,6 +1904,8 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
 };
 ```
 
+
+
 Nota sobre `putTable`: en el flujo actual, `putTable` reemplaza la tabla entera (usado al restaurar un estado); se trata igual que un `update` de cara al motor de sync (el backend hace upsert en ambos casos).
 
 Nota sobre `updateTable`/`updateRelationship`/`updateDependency`/`updateArea`/`updateCustomType`/`updateNote`: estas firmas de `StorageContext` no reciben `diagramId` (ver `src/context/storage-context/storage-context.tsx:59-63` y equivalentes). Se resuelven contra `engineRef.current?.diagramId`, que siempre corresponde al único diagrama abierto en el editor en un momento dado — esto es seguro porque `getDiagram`/`addDiagram` inicializan el motor antes de que el usuario pueda editar nada.
@@ -1896,15 +1934,19 @@ git commit -m "feat: route ApiStorageProvider mutations through SyncEngine"
 
 ---
 
+
+
 ### Task 9: Retirar Dexie y `SupabaseStorageProvider`
 
 **Files:**
+
 - Modify: `src/context/storage-context/storage-provider-selector.tsx`
 - Delete: `src/context/storage-context/storage-provider.tsx`
 - Delete: `src/context/storage-context/supabase-storage-provider.tsx`
 - Modify: `package.json` (quitar `dexie` de `dependencies`)
 
 **Interfaces:**
+
 - Consumes: `ApiStorageProvider` (Task 8).
 - Produces: `StorageProviderSelector` ahora renderiza siempre `ApiStorageProvider`.
 
@@ -1913,7 +1955,7 @@ git commit -m "feat: route ApiStorageProvider mutations through SyncEngine"
 Run: `grep -rn "from '.*storage-provider'" src --include=*.tsx --include=*.ts | grep -v api-storage-provider | grep -v storage-provider-selector`
 Expected: solo la línea de `storage-provider-selector.tsx` que se va a modificar en el siguiente paso.
 
-- [ ] **Step 2: Simplificar `storage-provider-selector.tsx`**
+- [ ] **Step 2: Simplificar** `storage-provider-selector.tsx`
 
 ```tsx
 import React from 'react';
@@ -1933,7 +1975,7 @@ git rm src/context/storage-context/storage-provider.tsx
 git rm src/context/storage-context/supabase-storage-provider.tsx
 ```
 
-- [ ] **Step 4: Quitar `dexie` de `package.json` y reinstalar**
+- [ ] **Step 4: Quitar** `dexie` **de** `package.json` **y reinstalar**
 
 En `package.json`, eliminar la línea `"dexie": "^4.4.5",` de `dependencies`.
 
@@ -1959,12 +2001,16 @@ git commit -m "chore: retire Dexie/IndexedDB and direct-Supabase storage provide
 
 ---
 
+
+
 ### Task 10: Indicador visual de guardado en `LastSaved`
 
 **Files:**
+
 - Modify: `src/pages/editor-page/top-navbar/last-saved.tsx`
 
 **Interfaces:**
+
 - Consumes: `useSyncStatus()` (Task 7).
 
 - [ ] **Step 1: Reescribir el componente**
@@ -2148,9 +2194,12 @@ git commit -m "feat: reflect live sync status in the LastSaved indicator"
 
 ---
 
+
+
 ### Task 11: Documentación de rollout
 
 **Files:**
+
 - Modify: `server/README.md`
 
 - [ ] **Step 1: Actualizar la sección "Rollout gradual"**
@@ -2182,13 +2231,17 @@ git commit -m "docs: update rollout notes for the sync engine and API-only persi
 
 ---
 
+
+
 ### Task 12: Benchmark de requests HTTP antes/después
 
 **Files:**
+
 - Create: `src/context/storage-context/api-storage-provider.benchmark.test.tsx`
 - Modify: `docs/superpowers/specs/2026-09-10-sync-engine-design.md` (añadir los resultados al final)
 
 **Interfaces:**
+
 - Consumes: `ApiStorageProvider` (Task 8), `useStorage` (`src/hooks/use-storage.ts`).
 
 El código anterior a este plan ya no existe tras la Task 8, así que el "antes" se documenta con los números ya confirmados durante la auditoría (Sección "El problema real" de la spec: 3 requests por edición de campo — 1 GET + 2 PATCH — sin agrupar). El "después" se mide con un test que reproduce las mismas ráfagas y cuenta las llamadas de red reales.
@@ -2323,6 +2376,8 @@ git commit -m "test: benchmark request count before/after the sync engine"
 
 ---
 
+
+
 ### Task 13: Verificación final
 
 **Files:** ninguno (solo comandos)
@@ -2348,3 +2403,4 @@ Expected: sin resultados
 git add -A
 git commit -m "chore: final verification pass for the sync engine rollout"
 ```
+
