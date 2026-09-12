@@ -9,7 +9,7 @@ export const ProtectedRoute: React.FC<React.PropsWithChildren> = ({
 }) => {
     const { user, loading } = useAuth();
 
-    // Si Supabase no está configurado, las rutas no se protegen y se usa el modo IndexedDB local.
+    // Si Supabase no está configurado, las rutas no se protegen (modo sin autenticación).
     if (!IS_SUPABASE_ENABLED) {
         return <>{children}</>;
     }

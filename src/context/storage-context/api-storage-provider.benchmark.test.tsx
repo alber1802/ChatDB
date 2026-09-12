@@ -5,6 +5,7 @@ import { ApiStorageProvider } from './api-storage-provider';
 import { useStorage } from '@/hooks/use-storage';
 import { apiFetch } from '@/lib/api-client';
 import type * as ApiClientModule from '@/lib/api-client';
+import type { DBTable } from '@/lib/domain/db-table';
 
 vi.mock('@/lib/api-client', async () => {
     const actual =
@@ -53,7 +54,10 @@ function ImportBurst() {
                 for (let i = 0; i < 100; i++) {
                     storage.addTable({
                         diagramId: 'd1',
-                        table: { id: `t${i}`, name: `table_${i}` } as any,
+                        table: {
+                            id: `t${i}`,
+                            name: `table_${i}`,
+                        } as unknown as DBTable,
                     });
                 }
             }}

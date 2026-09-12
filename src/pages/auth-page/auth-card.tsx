@@ -445,18 +445,6 @@ export const AuthCard: React.FC<AuthCardProps> = ({ onLoginSuccess }) => {
                                 <Sparkles className="size-4 transition-transform group-hover:scale-110" />
                                 ¿No tienes acceso? Únete a la lista de espera
                             </button>
-
-                            {/* ── Local storage fallback ── 
-                            <div className="text-center text-xs text-slate-500">
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/')}
-                                    className="font-medium text-blue-400 transition-colors hover:text-blue-300 hover:underline"
-                                >
-                                    Usar almacenamiento local temporal
-                                    (IndexedDB)
-                                </button>
-                            </div>*/}
                         </CardFooter>
                     </Card>
                 </motion.div>

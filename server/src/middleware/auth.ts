@@ -10,6 +10,10 @@ interface JwtPayload {
 }
 
 declare global {
+    // Express's own type augmentation pattern requires a namespace here;
+    // there is no ES2015-module equivalent for merging into an ambient
+    // global namespace.
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace Express {
         interface Request {
             user?: AuthUser;
