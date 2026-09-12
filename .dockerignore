@@ -9,10 +9,16 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Local environment files (injected via build-args at build time)
-# .env
-# .env.local
-# .env.*.local
+# Local environment files. NOT excluding .env.docker (see Dockerfile's
+# explicit `COPY .env.docker .env`) — this only excludes bare `.env` and
+# any `.local` variant. Without this, `.env.local` (VITE_API_URL pointing
+# at localhost for local dev) leaks into the build context via `COPY . .`
+# and Vite loads it with HIGHER priority than the `.env` written from
+# `.env.docker`, silently baking `http://localhost:3001` into production
+# builds instead of the real backend URL.
+.env
+.env.local
+.env.*.local
 
 # Docker config files themselves
 Dockerfile
