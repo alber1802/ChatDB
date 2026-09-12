@@ -200,7 +200,6 @@ export class SyncEngine {
             // dejaría el envío en curso sin confirmar y reabriría, en una
             // ventana más estrecha, la misma carrera de lectura obsoleta.
             await this.inFlightDone;
-            if (this.queue.size === 0) return;
             return this.flushNow();
         }
         if (this.queue.size === 0) return;

@@ -277,6 +277,82 @@ describe('SyncEngine', () => {
         engine.destroy();
     });
 
+    // ─── regression: a second concurrent waiter must not resolve before
+    // the batch queued during the wait is itself confirmed ───────────────
+    it('does not let a second concurrent flushNow() waiter resolve before the batch queued during the wait is confirmed', async () => {
+        const settlers: Array<(v: { version: number; conflicts: [] }) => void> =
+            [];
+        vi.mocked(apiFetch).mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    settlers.push(resolve as (typeof settlers)[number]);
+                }) as never
+        );
+        const engine = new SyncEngine({ diagramId: 'd1', initialVersion: 1 });
+
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { x: 1 },
+        });
+        await vi.advanceTimersByTimeAsync(700); // batch 1 is now in flight
+        expect(apiFetch).toHaveBeenCalledTimes(1);
+
+        // Two more writes land while batch 1 is still unconfirmed — these
+        // stand in for two concurrent callers (e.g. two of the bulk
+        // deleteDiagram* methods run together via Promise.all).
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't2',
+            patch: { y: 2 },
+        });
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't3',
+            patch: { z: 3 },
+        });
+
+        let aSettled = false;
+        let bSettled = false;
+        const waiterA = engine.flushNow().then(() => {
+            aSettled = true;
+        });
+        const waiterB = engine.flushNow().then(() => {
+            bSettled = true;
+        });
+
+        // Resolve batch 1. Both waiters were awaiting the same
+        // inFlightDone promise, so their continuations now run in
+        // registration order.
+        settlers[0]({ version: 2, conflicts: [] });
+        await vi.advanceTimersByTimeAsync(0);
+
+        // Batch 2 (t2 + t3) must now be in flight...
+        expect(apiFetch).toHaveBeenCalledTimes(2);
+        // ...and NEITHER waiter may have resolved yet: batch 2 is still
+        // unconfirmed, so a caller acting on either promise would wrongly
+        // believe its write already reached the server.
+        expect(aSettled).toBe(false);
+        expect(bSettled).toBe(false);
+
+        settlers[1]({ version: 3, conflicts: [] });
+        await Promise.all([waiterA, waiterB]);
+        expect(aSettled).toBe(true);
+        expect(bSettled).toBe(true);
+
+        const second = JSON.parse(
+            (vi.mocked(apiFetch).mock.calls[1][1] as RequestInit).body as string
+        );
+        expect(second.operations).toEqual([
+            { entity: 'table', op: 'update', id: 't2', patch: { y: 2 } },
+            { entity: 'table', op: 'update', id: 't3', patch: { z: 3 } },
+        ]);
+        engine.destroy();
+    });
+
     // ─── I3: the in-flight batch must survive an unload / crash ──────────
     it('sends the batch with keepalive so it survives tab unload', async () => {
         vi.mocked(apiFetch).mockResolvedValue({ version: 2, conflicts: [] });
