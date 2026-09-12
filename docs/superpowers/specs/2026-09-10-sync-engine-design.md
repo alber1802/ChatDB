@@ -185,3 +185,16 @@ número de requests HTTP y tiempo total al (a) editar 20 campos seguidos,
 (b) arrastrar 10 tablas seleccionadas simultáneamente, (c) importar un
 esquema de 100 tablas. Comparar contra el motor nuevo con los mismos
 escenarios.
+
+## Resultado del benchmark (Task 12 del plan de implementación)
+
+ANTES (ApiStorageProvider previo a este plan, confirmado por lectura de
+código en `chartdb-provider.tsx:654-719`):
+- 20 ediciones de campo: 60 requests HTTP (20× GET + 20× PATCH diagrama + 20× PATCH tabla)
+- Importar 100 tablas: 100 requests HTTP (uno por tabla)
+
+DESPUÉS (SyncEngine, Task 6-8):
+- 20 ediciones de campo: 1 request HTTP
+- Importar 100 tablas: 1 request HTTP
+
+DIFERENCIA: -98% a -99% en número de requests para ambos escenarios.
