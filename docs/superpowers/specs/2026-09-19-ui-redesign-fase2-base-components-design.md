@@ -105,7 +105,7 @@ consumidores reales, todos en `side-panel/`, todos con la misma forma
 | Consumidor | Ícono nuevo | Justificación |
 |---|---|---|
 | `tables-section/tables-section.tsx` | `Table` | Coincide con el ícono de "Tablas" en `editor-sidebar.tsx` |
-| `visuals-section/areas-tab/areas-tab.tsx` | `Shapes` | Áreas = agrupación visual de tablas |
+| `visuals-section/areas-tab/areas-tab.tsx` | `Group` | Áreas = agrupación visual de tablas; se usa `Group` (no `Shapes`) porque ya está importado en este mismo archivo para el botón "crear área" y coincide con el ícono de "Visuales" del sidebar — decisión tomada durante la implementación, ver plan. |
 | `visuals-section/notes-tab/notes-tab.tsx` | `StickyNote` | Literal y claro |
 | `custom-types-section/custom-types-section.tsx` | `FileType` | Coincide con el ícono de "Tipos personalizados" en `editor-sidebar.tsx` |
 | `refs-section/refs-section.tsx` | `Workflow` | Coincide con el ícono de "Referencias" en `editor-sidebar.tsx` |
