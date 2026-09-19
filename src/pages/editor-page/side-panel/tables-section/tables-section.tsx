@@ -206,6 +206,7 @@ export const TablesSection: React.FC<TablesSectionProps> = () => {
                 <ScrollArea className="h-full">
                     {tables.length === 0 ? (
                         <EmptyState
+                            icon={Table}
                             title={t(
                                 'side_panel.tables_section.empty_state.title'
                             )}

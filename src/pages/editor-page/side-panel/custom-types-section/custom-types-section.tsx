@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { Button } from '@/components/button/button';
-import { X, Plus } from 'lucide-react';
+import { FileType, X, Plus } from 'lucide-react';
 import { Input } from '@/components/input/input';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { EmptyState } from '@/components/empty-state/empty-state';
@@ -66,6 +66,7 @@ export const CustomTypesSection: React.FC<CustomTypesSectionProps> = () => {
                 <ScrollArea className="h-full">
                     {customTypes.length === 0 ? (
                         <EmptyState
+                            icon={FileType}
                             title={t(
                                 'side_panel.custom_types_section.empty_state.title'
                             )}

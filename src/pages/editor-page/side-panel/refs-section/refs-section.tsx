@@ -209,6 +209,7 @@ export const RefsSection: React.FC<RefsSectionProps> = () => {
                 <ScrollArea className="h-full">
                     {allRefs.length === 0 ? (
                         <EmptyState
+                            icon={Workflow}
                             title={t(
                                 'side_panel.refs_section.empty_state.title'
                             )}

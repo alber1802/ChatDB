@@ -85,6 +85,7 @@ export const NotesTab: React.FC<NotesTabProps> = () => {
                 <ScrollArea className="h-full">
                     {notes.length === 0 ? (
                         <EmptyState
+                            icon={StickyNote}
                             title={t(
                                 'side_panel.notes_section.empty_state.title'
                             )}

@@ -1,8 +1,6 @@
 import React, { forwardRef, useMemo } from 'react';
-import EmptyStateImage from '@/assets/empty_state.png';
-import EmptyStateImageDark from '@/assets/empty_state_dark.png';
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/hooks/use-theme';
 import {
     Empty,
     EmptyContent,
@@ -29,6 +27,7 @@ export interface EmptyStateFooterAction {
 }
 
 export interface EmptyStateProps {
+    icon: LucideIcon;
     title: string;
     description: string;
     imageClassName?: string;
@@ -45,6 +44,7 @@ export const EmptyState = forwardRef<
 >(
     (
         {
+            icon: Icon,
             title,
             description,
             className,
@@ -57,22 +57,12 @@ export const EmptyState = forwardRef<
         },
         ref
     ) => {
-        const { effectiveTheme } = useTheme();
-
         // Determine if we have any actions to show
         const hasActions = useMemo(
             () => !!(primaryAction || secondaryAction),
             [primaryAction, secondaryAction]
         );
         const hasFooterAction = useMemo(() => !!footerAction, [footerAction]);
-
-        const emptyStateImage = useMemo(
-            () =>
-                effectiveTheme === 'dark'
-                    ? EmptyStateImageDark
-                    : EmptyStateImage,
-            [effectiveTheme]
-        );
 
         return (
             <div
@@ -84,13 +74,8 @@ export const EmptyState = forwardRef<
             >
                 <Empty>
                     <EmptyHeader>
-                        <EmptyMedia variant="icon">
-                            {/* <Group /> */}
-                            <img
-                                src={emptyStateImage}
-                                alt="Empty state"
-                                className={cn('p-2', imageClassName)}
-                            />
+                        <EmptyMedia variant="icon" className={imageClassName}>
+                            <Icon className="size-6" />
                         </EmptyMedia>
                         <EmptyTitle className={titleClassName}>
                             {title}

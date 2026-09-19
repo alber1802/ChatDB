@@ -85,6 +85,7 @@ export const AreasTab: React.FC<AreasTabProps> = () => {
                 <ScrollArea className="h-full">
                     {areas.length === 0 ? (
                         <EmptyState
+                            icon={Group}
                             title={t(
                                 'side_panel.areas_section.empty_state.title'
                             )}
