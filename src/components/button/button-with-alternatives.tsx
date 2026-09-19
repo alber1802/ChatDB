@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDownIcon } from '@radix-ui/react-icons';
+import { ChevronDown } from 'lucide-react';
 import { Slot } from '@radix-ui/react-slot';
 import { type VariantProps } from 'class-variance-authority';
 
@@ -83,7 +83,7 @@ const ButtonWithAlternatives = React.forwardRef<
                                 )}
                                 type="button"
                             >
-                                <ChevronDownIcon
+                                <ChevronDown
                                     className={cn(
                                         'size-4 shrink-0',
                                         chevronDownIconClassName

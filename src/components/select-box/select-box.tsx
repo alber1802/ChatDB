@@ -1,4 +1,4 @@
-import { CaretSortIcon, CheckIcon, Cross2Icon } from '@radix-ui/react-icons';
+import { ChevronsUpDown, Check, X } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
@@ -173,7 +173,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                     }}
                                     className="flex items-center rounded-sm px-px text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground"
                                 >
-                                    <Cross2Icon />
+                                    <X />
                                 </span>
                             ) : null}
                         </span>
@@ -267,7 +267,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                         : 'opacity-50 [&_svg]:invisible'
                                 )}
                             >
-                                <CheckIcon />
+                                <Check />
                             </div>
                         )}
                         <div className="flex flex-1 items-center truncate">
@@ -290,7 +290,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                         </div>
                         {((!multiple && option.value === value) ||
                             isRegexMatch) && (
-                            <CheckIcon
+                            <Check
                                 className={cn(
                                     'ml-auto',
                                     option.value === value
@@ -371,12 +371,12 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                             {clearText}
                                         </span>
                                     ) : (
-                                        <Cross2Icon className="size-3.5" />
+                                        <X className="size-3.5" />
                                     )}
                                 </div>
                             ) : (
                                 <div>
-                                    <CaretSortIcon className="size-4" />
+                                    <ChevronsUpDown className="size-4" />
                                 </div>
                             )}
                         </div>
@@ -429,7 +429,7 @@ export const SelectBox = React.forwardRef<HTMLInputElement, SelectBoxProps>(
                                     className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 text-muted-foreground hover:text-foreground"
                                     onClick={() => setSearchTerm('')}
                                 >
-                                    <Cross2Icon className="size-4" />
+                                    <X className="size-4" />
                                 </div>
                             )}
                             {!searchTerm &&

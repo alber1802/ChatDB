@@ -21,7 +21,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/tooltip/tooltip';
-import { ViewVerticalIcon } from '@radix-ui/react-icons';
+import { PanelLeft } from 'lucide-react';
 import { useSidebar } from './use-sidebar';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state';
@@ -298,7 +298,7 @@ const SidebarTrigger = React.forwardRef<
             }}
             {...props}
         >
-            <ViewVerticalIcon />
+            <PanelLeft />
             <span className="sr-only">Toggle Sidebar</span>
         </Button>
     );
