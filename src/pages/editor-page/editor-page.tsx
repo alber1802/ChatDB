@@ -1,7 +1,6 @@
 import React, { Suspense, useEffect } from 'react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useDialog } from '@/hooks/use-dialog';
-import { Toaster } from '@/components/toast/toaster';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { useLocalConfig } from '@/hooks/use-local-config';
 import { FullScreenLoaderProvider } from '@/context/full-screen-spinner-context/full-screen-spinner-provider';
@@ -104,7 +103,6 @@ const EditorPageComponent: React.FC = () => {
                     )}
                 </Suspense>
             </section>
-            <Toaster />
         </>
     );
 };

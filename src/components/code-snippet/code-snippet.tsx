@@ -3,7 +3,7 @@ import React, { lazy, Suspense, useCallback, useEffect } from 'react';
 import { Spinner } from '../spinner/spinner';
 import { useTheme } from '@/hooks/use-theme';
 import { useMonaco } from '@monaco-editor/react';
-import { useToast } from '@/components/toast/use-toast';
+import { notify } from '@/lib/notifications';
 import { Button } from '../button/button';
 import type { LucideIcon } from 'lucide-react';
 import { Copy, CopyCheck } from 'lucide-react';
@@ -65,7 +65,6 @@ export const CodeSnippet: React.FC<CodeSnippetProps> = React.memo(
         const { t } = useTranslation();
         const monaco = useMonaco();
         const { effectiveTheme } = useTheme();
-        const { toast } = useToast();
         const [isCopied, setIsCopied] = React.useState(false);
         const [tooltipOpen, setTooltipOpen] = React.useState(false);
 
@@ -96,13 +95,10 @@ export const CodeSnippet: React.FC<CodeSnippetProps> = React.memo(
 
         const copyToClipboard = useCallback(async () => {
             if (!navigator?.clipboard) {
-                toast({
-                    title: t('copy_to_clipboard_toast.unsupported.title'),
-                    variant: 'destructive',
-                    description: t(
-                        'copy_to_clipboard_toast.unsupported.description'
-                    ),
-                });
+                notify.error(
+                    t('copy_to_clipboard_toast.unsupported.title'),
+                    t('copy_to_clipboard_toast.unsupported.description')
+                );
                 return;
             }
 
@@ -111,15 +107,12 @@ export const CodeSnippet: React.FC<CodeSnippetProps> = React.memo(
                 setIsCopied(true);
             } catch {
                 setIsCopied(false);
-                toast({
-                    title: t('copy_to_clipboard_toast.failed.title'),
-                    variant: 'destructive',
-                    description: t(
-                        'copy_to_clipboard_toast.failed.description'
-                    ),
-                });
+                notify.error(
+                    t('copy_to_clipboard_toast.failed.title'),
+                    t('copy_to_clipboard_toast.failed.description')
+                );
             }
-        }, [code, codeToCopy, t, toast]);
+        }, [code, codeToCopy, t]);
 
         return (
             <div

@@ -11,7 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { CodeSnippet } from '@/components/code-snippet/code-snippet';
 import type { EffectiveTheme } from '@/context/theme-context/theme-context';
 import type { Diagram } from '@/lib/domain/diagram';
-import { useToast } from '@/components/toast/use-toast';
+import { notify } from '@/lib/notifications';
 import { setupDBMLLanguage } from '@/components/code-snippet/languages/dbml-language';
 import {
     AlertCircle,
@@ -50,7 +50,6 @@ export const TableDBML: React.FC<TableDBMLProps> = () => {
     const { currentDiagram, updateDiagramData, databaseType, readonly } =
         useChartDB();
     const { effectiveTheme } = useTheme();
-    const { toast } = useToast();
     const [dbmlFormat, setDbmlFormat] = useState<'inline' | 'standard'>(
         'inline'
     );
@@ -182,11 +181,10 @@ export const TableDBML: React.FC<TableDBMLProps> = () => {
 
             // Handle errors
             if (result.error) {
-                toast({
-                    title: 'DBML Export Error',
-                    description: `Could not generate DBML: ${result.error.substring(0, 100)}${result.error.length > 100 ? '...' : ''}`,
-                    variant: 'destructive',
-                });
+                notify.error(
+                    'DBML Export Error',
+                    `Could not generate DBML: ${result.error.substring(0, 100)}${result.error.length > 100 ? '...' : ''}`
+                );
             }
 
             setStandardDbml(result.standardDbml);
@@ -195,7 +193,7 @@ export const TableDBML: React.FC<TableDBMLProps> = () => {
         };
 
         setTimeout(() => generateDBML(), 0);
-    }, [currentDiagram, toast, isEditMode]);
+    }, [currentDiagram, isEditMode]);
 
     // Update editedDbml when dbmlToDisplay changes
     useEffect(() => {

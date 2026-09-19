@@ -45,7 +45,7 @@ import {
     TARGET_ID_PREFIX,
 } from './table-node/table-node-field';
 import { Toolbar } from './toolbar/toolbar';
-import { useToast } from '@/components/toast/use-toast';
+import { notify } from '@/lib/notifications';
 import {
     Pencil,
     Magnet,
@@ -278,7 +278,6 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
     const [selectedRelationshipIds, setSelectedRelationshipIds] = useState<
         string[]
     >([]);
-    const { toast } = useToast();
     const { t } = useTranslation();
     const { isLostInCanvas } = useIsLostInCanvas();
     const {
@@ -914,12 +913,10 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                     databaseType
                 )
             ) {
-                toast({
-                    title: 'Field types are not compatible',
-                    variant: 'destructive',
-                    description:
-                        'Relationships can only be created between compatible field types',
-                });
+                notify.error(
+                    'Field types are not compatible',
+                    'Relationships can only be created between compatible field types'
+                );
                 return;
             }
 
@@ -930,7 +927,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 targetFieldId,
             });
         },
-        [createRelationship, createDependency, getField, toast, databaseType]
+        [createRelationship, createDependency, getField, databaseType]
     );
 
     const onEdgesChangeHandler: OnEdgesChange<EdgeType> = useCallback(
