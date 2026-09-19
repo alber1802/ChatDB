@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { Input } from '@/components/input/input';
 import { Button } from '@/components/button/button';
 import { LayoutGrid, List, Plus, Search, Database, X } from 'lucide-react';
@@ -10,6 +11,7 @@ import {
     SelectValue,
 } from '@/components/select/select';
 import { DatabaseType } from '@/lib/domain/database-type';
+import { getOperatingSystem } from '@/lib/utils';
 
 interface DashboardToolbarProps {
     searchQuery: string;
@@ -43,6 +45,20 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
     onViewModeChange,
     onCreateNew,
 }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const shortcutLabel =
+        getOperatingSystem() === 'mac' ? '⌘K' : 'Ctrl+K';
+
+    useHotkeys(
+        'mod+k',
+        (e) => {
+            e.preventDefault();
+            inputRef.current?.focus();
+        },
+        { preventDefault: true },
+        []
+    );
+
     return (
         <div className="flex flex-col gap-4 rounded-2xl border border-border/30 bg-card/45 p-4 shadow-sm backdrop-blur-md md:flex-row md:items-center md:justify-between">
             {/* Left side: Search & Filter */}
@@ -51,19 +67,24 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
                 <div className="relative max-w-md flex-1">
                     <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
+                        ref={inputRef}
                         type="text"
                         placeholder="Buscar diagramas por nombre..."
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                         className="h-10 w-full px-9"
                     />
-                    {searchQuery && (
+                    {searchQuery ? (
                         <button
                             onClick={() => onSearchChange('')}
                             className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted"
                         >
                             <X className="size-3" />
                         </button>
+                    ) : (
+                        <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border/60 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                            {shortcutLabel}
+                        </kbd>
                     )}
                 </div>
 

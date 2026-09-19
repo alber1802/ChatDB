@@ -143,8 +143,35 @@ const DiagramsDashboardPageComponent: React.FC = () => {
                         onCreateNew={handleCreateNew}
                     />
 
+                    {!loading &&
+                        !searchQuery &&
+                        selectedDBType === 'all' &&
+                        diagrams.length > 4 && (
+                            <div className="mb-8 mt-6">
+                                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                    Recientes
+                                </h2>
+                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                                    {diagrams.slice(0, 4).map((diagram) => (
+                                        <DiagramCard
+                                            key={diagram.id}
+                                            diagram={diagram}
+                                            onDelete={handleDelete}
+                                            onRename={handleRename}
+                                            onDuplicate={handleDuplicate}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                     {/* Content Section */}
                     <div className="mt-6">
+                        {!loading && (
+                            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                Todos los diagramas
+                            </h2>
+                        )}
                         {loading ? (
                             renderSkeletons()
                         ) : filteredDiagrams.length === 0 ? (
