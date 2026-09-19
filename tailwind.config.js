@@ -20,6 +20,14 @@ module.exports = {
                     ...defaultTheme.fontFamily.sans
                 ]
     		},
+    		fontSize: {
+    			display: ['24px', { lineHeight: '32px', fontWeight: '700' }],
+    			heading: ['18px', { lineHeight: '26px', fontWeight: '600' }],
+    			subheading: ['15px', { lineHeight: '22px', fontWeight: '600' }],
+    			body: ['13px', { lineHeight: '20px' }],
+    			caption: ['12px', { lineHeight: '16px' }],
+    			metadata: ['11px', { lineHeight: '14px' }]
+    		},
     		colors: {
     			border: 'hsl(var(--border))',
     			input: 'hsl(var(--input))',
@@ -38,6 +46,18 @@ module.exports = {
     			destructive: {
     				DEFAULT: 'hsl(var(--destructive))',
     				foreground: 'hsl(var(--destructive-foreground))'
+    			},
+    			success: {
+    				DEFAULT: 'hsl(var(--success))',
+    				foreground: 'hsl(var(--success-foreground))'
+    			},
+    			warning: {
+    				DEFAULT: 'hsl(var(--warning))',
+    				foreground: 'hsl(var(--warning-foreground))'
+    			},
+    			info: {
+    				DEFAULT: 'hsl(var(--info))',
+    				foreground: 'hsl(var(--info-foreground))'
     			},
     			muted: {
     				DEFAULT: 'hsl(var(--muted))',
@@ -67,9 +87,10 @@ module.exports = {
     			}
     		},
     		borderRadius: {
-    			lg: 'var(--radius)',
-    			md: 'calc(var(--radius) - 2px)',
-    			sm: 'calc(var(--radius) - 4px)'
+    			xl: 'var(--radius-xl)',
+    			lg: 'var(--radius-lg)',
+    			md: 'var(--radius-md)',
+    			sm: 'var(--radius-sm)'
     		},
     		keyframes: {
     			'accordion-down': {

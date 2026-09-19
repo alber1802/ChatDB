@@ -5,6 +5,10 @@
 @tailwind utilities;
 
 @layer components {
+    .cta-gradient {
+        background-image: var(--gradient-cta);
+    }
+
     .react-flow.canvas-cursor-default .react-flow__pane {
         @apply cursor-default;
     }
