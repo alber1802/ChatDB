@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Sparkles, Database, Cloud } from 'lucide-react';
 
 export const ShowcaseSection: React.FC = () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Card, CardContent } from '@/components/card/card';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/button/button';

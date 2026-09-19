@@ -21,7 +21,7 @@ import {
     Clock,
     Sparkles,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import ChartDBDarkLogo from '@/assets/logo-dark.png';
 import { translateAuthError } from './utils';
 import { notify } from '@/lib/notifications';
