@@ -79,10 +79,6 @@ const ButtonWithAlternatives = React.forwardRef<
                                 className={cn(
                                     buttonVariants({ variant, size }),
                                     'rounded-l-none border-l border-l-primary/5 px-2 min-w-0',
-                                    className?.includes('h-') &&
-                                        className.match(/h-\d+/)?.[0],
-                                    className?.includes('text-') &&
-                                        className.match(/text-\w+/)?.[0],
                                     dropdownTriggerClassName
                                 )}
                                 type="button"

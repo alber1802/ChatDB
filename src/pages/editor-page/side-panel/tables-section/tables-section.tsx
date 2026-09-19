@@ -159,7 +159,8 @@ export const TablesSection: React.FC<TablesSectionProps> = () => {
                 {!readonly ? (
                     <ButtonWithAlternatives
                         variant="secondary"
-                        className="h-8 p-2 text-xs"
+                        size="sm"
+                        className="p-2"
                         onClick={() => handleCreateTable({ view: false })}
                         dropdownTriggerClassName="px-1"
                         chevronDownIconClassName="!size-3.5"
