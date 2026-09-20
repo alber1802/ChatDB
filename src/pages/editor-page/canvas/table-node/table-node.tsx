@@ -581,10 +581,11 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                                 </Label>
                             )}
                         </div>
-                        <div className="hidden shrink-0 flex-row group-hover:flex">
+                        <div className="flex shrink-0 flex-row opacity-0 transition-opacity group-hover:opacity-100 has-[:focus-visible]:opacity-100">
                             {readonly ? null : (
                                 <Button
                                     variant="ghost"
+                                    aria-label="Abrir tabla en el editor"
                                     className="size-6 p-0 text-slate-500 hover:bg-primary-foreground hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                                     onClick={openTableInEditor}
                                 >
@@ -593,6 +594,11 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                             )}
                             <Button
                                 variant="ghost"
+                                aria-label={
+                                    table.width !== MAX_TABLE_SIZE
+                                        ? 'Expandir tabla'
+                                        : 'Contraer tabla'
+                                }
                                 className="size-6 p-0 text-slate-500 hover:bg-primary-foreground hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                                 onClick={
                                     table.width !== MAX_TABLE_SIZE

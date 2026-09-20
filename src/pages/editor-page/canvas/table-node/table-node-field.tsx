@@ -615,9 +615,10 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                     </div>
                 </div>
                 {readonly ? null : (
-                    <div className="ml-2 hidden shrink-0 flex-row group-hover:flex">
+                    <div className="ml-2 flex shrink-0 flex-row opacity-0 transition-opacity group-hover:opacity-100 has-[:focus-visible]:opacity-100">
                         <Button
                             variant="ghost"
+                            aria-label="Editar campo"
                             className="size-6 p-0 hover:bg-primary-foreground"
                             onClick={(e) => {
                                 e.stopPropagation();
