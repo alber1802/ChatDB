@@ -15,7 +15,11 @@ const envSchema = z.object({
     SUPABASE_URL: z.string().url(),
     SUPABASE_ANON_KEY: z.string().min(1),
     REDIS_URL: z.string().optional().default(''),
-    LOGIN_ATTEMPTS_BEFORE_COOLDOWN: z.coerce.number().int().positive().default(3),
+    LOGIN_ATTEMPTS_BEFORE_COOLDOWN: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(3),
     LOGIN_COOLDOWN_MS: z.coerce.number().int().positive().default(60_000),
     LOGIN_ATTEMPTS_BEFORE_BLOCK: z.coerce.number().int().positive().default(9),
 });

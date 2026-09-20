@@ -26,9 +26,8 @@ export const AuditLogs: React.FC = () => {
             setLoading(true);
 
             if (IS_API_ENABLED) {
-                const mappedLogs = await apiFetch<AuditLog[]>(
-                    '/admin/audit-logs'
-                );
+                const mappedLogs =
+                    await apiFetch<AuditLog[]>('/admin/audit-logs');
                 setLogs(mappedLogs);
                 setFilteredLogs(mappedLogs);
                 return;

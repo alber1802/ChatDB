@@ -433,10 +433,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
 
         const buildEdgesWhenReady = () => {
             if (cancelled) return;
-            if (
-                !handlesReady() &&
-                Date.now() - waitStartedAt < maxWaitMs
-            ) {
+            if (!handlesReady() && Date.now() - waitStartedAt < maxWaitMs) {
                 rafId = requestAnimationFrame(buildEdgesWhenReady);
                 return;
             }

@@ -6,10 +6,7 @@ import type { IncomingMessage } from 'node:http';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { globalRateLimit } from './middleware/rateLimit.js';
-import {
-    errorHandler,
-    notFoundHandler,
-} from './middleware/errorHandler.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { diagramsRouter } from './modules/diagrams/diagrams.routes.js';
 import { tablesRouter } from './modules/tables/tables.routes.js';
 import { relationshipsRouter } from './modules/relationships/relationships.routes.js';
@@ -42,8 +39,7 @@ export function createApp() {
         pinoHttp({
             logger,
             autoLogging: {
-                ignore: (req: IncomingMessage) =>
-                    (req.url ?? '') === '/health',
+                ignore: (req: IncomingMessage) => (req.url ?? '') === '/health',
             },
             serializers: {
                 req(req: IncomingMessage & { id?: unknown }) {

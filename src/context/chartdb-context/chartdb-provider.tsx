@@ -842,7 +842,10 @@ export const ChartDBProvider: React.FC<
 
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
-            await db.updateDiagram({ id: diagramId, attributes: { updatedAt } });
+            await db.updateDiagram({
+                id: diagramId,
+                attributes: { updatedAt },
+            });
 
             if (options.updateHistory) {
                 addUndoAction({
@@ -1129,14 +1132,7 @@ export const ChartDBProvider: React.FC<
                     resetRedoStack();
                 }
             },
-            [
-                db,
-                diagramId,
-                setTables,
-                addUndoAction,
-                resetRedoStack,
-                getTable,
-            ]
+            [db, diagramId, setTables, addUndoAction, resetRedoStack, getTable]
         );
 
     const createCheckConstraint: ChartDBContext['createCheckConstraint'] =

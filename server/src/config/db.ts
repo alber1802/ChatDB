@@ -34,9 +34,10 @@ export async function withUserContext<T>(
         await client.query('BEGIN');
         await client.query('SET LOCAL ROLE authenticated');
         // auth.uid() reads request.jwt.claim.sub (and optionally request.jwt.claims)
-        await client.query(`SELECT set_config('request.jwt.claim.sub', $1, true)`, [
-            userId,
-        ]);
+        await client.query(
+            `SELECT set_config('request.jwt.claim.sub', $1, true)`,
+            [userId]
+        );
         await client.query(
             `SELECT set_config('request.jwt.claims', $1, true)`,
             [JSON.stringify({ sub: userId, role: 'authenticated' })]

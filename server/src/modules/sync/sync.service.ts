@@ -275,8 +275,8 @@ export const syncService = {
             throw new AppError(404, 'Diagram not found', 'not_found');
         }
         const currentVersion = Number(rows[0].version ?? 1);
-        const lastSyncSessionId = (rows[0].last_sync_session_id ??
-            null) as string | null;
+        const lastSyncSessionId = (rows[0].last_sync_session_id ?? null) as
+            string | null;
         const versionMoved = currentVersion !== request.baseVersion;
         // `version` is a single diagram-wide counter, not per row, so a
         // mismatch alone doesn't mean another collaborator touched these

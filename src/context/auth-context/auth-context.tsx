@@ -216,14 +216,11 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                     if (!res.ok) {
                         if (payload.error === 'cooldown') {
                             setIsLockedOut(true);
-                            setLockoutUntil(
-                                new Date(Date.now() + COOLDOWN_MS)
-                            );
+                            setLockoutUntil(new Date(Date.now() + COOLDOWN_MS));
                         }
                         return {
                             error: new Error(
-                                payload.message ??
-                                    'Invalid login credentials'
+                                payload.message ?? 'Invalid login credentials'
                             ),
                         };
                     }

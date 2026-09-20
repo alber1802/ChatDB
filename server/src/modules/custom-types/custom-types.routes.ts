@@ -1,10 +1,7 @@
 import { Router } from 'express';
 import { withUserContext } from '../../config/db.js';
 import { authenticate } from '../../middleware/auth.js';
-import {
-    customTypePatchSchema,
-    customTypeSchema,
-} from '../../lib/schemas.js';
+import { customTypePatchSchema, customTypeSchema } from '../../lib/schemas.js';
 import { AppError } from '../../lib/types.js';
 import { diagramsService } from '../diagrams/diagrams.service.js';
 import type { CustomTypeDto } from '../../lib/mappers.js';

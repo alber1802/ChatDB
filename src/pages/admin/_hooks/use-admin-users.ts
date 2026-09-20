@@ -15,9 +15,7 @@ export const useAdminUsers = () => {
             setError(null);
 
             if (IS_API_ENABLED) {
-                const data = await apiFetch<AdminUserProfile[]>(
-                    '/admin/users'
-                );
+                const data = await apiFetch<AdminUserProfile[]>('/admin/users');
                 setUsers(data || []);
             } else {
                 const { data, error: supabaseError } =

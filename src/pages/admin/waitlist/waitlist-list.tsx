@@ -75,9 +75,7 @@ export const WaitlistList: React.FC = () => {
         setLoading(true);
         try {
             if (IS_API_ENABLED) {
-                const data = await apiFetch<WaitlistEntry[]>(
-                    '/admin/waitlist'
-                );
+                const data = await apiFetch<WaitlistEntry[]>('/admin/waitlist');
                 setEntries(data ?? []);
             } else {
                 const { data, error } = await supabase

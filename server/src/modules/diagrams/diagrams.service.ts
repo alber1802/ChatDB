@@ -90,15 +90,18 @@ async function hydrate(
     diagram: DiagramDto,
     options?: IncludeOptions
 ): Promise<DiagramDto> {
-    if (options?.includeTables) diagram.tables = await listTables(client, diagram.id);
+    if (options?.includeTables)
+        diagram.tables = await listTables(client, diagram.id);
     if (options?.includeRelationships)
         diagram.relationships = await listRelationships(client, diagram.id);
     if (options?.includeDependencies)
         diagram.dependencies = await listDependencies(client, diagram.id);
-    if (options?.includeAreas) diagram.areas = await listAreas(client, diagram.id);
+    if (options?.includeAreas)
+        diagram.areas = await listAreas(client, diagram.id);
     if (options?.includeCustomTypes)
         diagram.customTypes = await listCustomTypes(client, diagram.id);
-    if (options?.includeNotes) diagram.notes = await listNotes(client, diagram.id);
+    if (options?.includeNotes)
+        diagram.notes = await listNotes(client, diagram.id);
     return diagram;
 }
 
@@ -159,7 +162,11 @@ export const diagramsService = {
             children.push(client.query(uq.text, uq.values));
         }
         for (const rel of diagram.relationships ?? []) {
-            const r = relationshipToRow(rel as RelationshipDto, diagram.id, userId);
+            const r = relationshipToRow(
+                rel as RelationshipDto,
+                diagram.id,
+                userId
+            );
             const uq = upsertSql('db_relationships', r, 'id');
             children.push(client.query(uq.text, uq.values));
         }
@@ -211,7 +218,8 @@ export const diagramsService = {
             `UPDATE diagrams SET ${sets} WHERE id = $${keys.length + 1}`,
             [...keys.map((k) => mapped[k]), id]
         );
-        if (!rowCount) throw new AppError(404, 'Diagram not found', 'not_found');
+        if (!rowCount)
+            throw new AppError(404, 'Diagram not found', 'not_found');
     },
 
     async remove(client: PoolClient, id: string) {
@@ -219,7 +227,8 @@ export const diagramsService = {
             `DELETE FROM diagrams WHERE id = $1`,
             [id]
         );
-        if (!rowCount) throw new AppError(404, 'Diagram not found', 'not_found');
+        if (!rowCount)
+            throw new AppError(404, 'Diagram not found', 'not_found');
     },
 
     async upsertTable(
@@ -346,7 +355,11 @@ export const diagramsService = {
             throw new AppError(404, 'Relationship not found', 'not_found');
     },
 
-    async deleteRelationship(client: PoolClient, diagramId: string, id: string) {
+    async deleteRelationship(
+        client: PoolClient,
+        diagramId: string,
+        id: string
+    ) {
         const { rowCount } = await client.query(
             `DELETE FROM db_relationships WHERE diagram_id = $1 AND id = $2`,
             [diagramId, id]
@@ -389,7 +402,8 @@ export const diagramsService = {
         const mapped: Record<string, unknown> = {};
         if (attributes.schema !== undefined)
             mapped.schema = attributes.schema ?? null;
-        if (attributes.tableId !== undefined) mapped.table_id = attributes.tableId;
+        if (attributes.tableId !== undefined)
+            mapped.table_id = attributes.tableId;
         if (attributes.dependentSchema !== undefined)
             mapped.dependent_schema = attributes.dependentSchema ?? null;
         if (attributes.dependentTableId !== undefined)
@@ -447,7 +461,8 @@ export const diagramsService = {
         attributes: Record<string, unknown>
     ) {
         const mapped: Record<string, unknown> = {};
-        if (attributes.name !== undefined) mapped.name = attributes.name ?? null;
+        if (attributes.name !== undefined)
+            mapped.name = attributes.name ?? null;
         if (attributes.x !== undefined) mapped.x = attributes.x;
         if (attributes.y !== undefined) mapped.y = attributes.y;
         if (attributes.width !== undefined) mapped.width = attributes.width;

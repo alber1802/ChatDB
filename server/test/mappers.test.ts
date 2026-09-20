@@ -16,7 +16,10 @@ describe('mappers', () => {
             createdAt: '2026-01-01T00:00:00.000Z',
             updatedAt: '2026-01-02T00:00:00.000Z',
         };
-        const row = diagramToRow(diagram, '11111111-1111-1111-1111-111111111111');
+        const row = diagramToRow(
+            diagram,
+            '11111111-1111-1111-1111-111111111111'
+        );
         const back = rowToDiagram(row as unknown as Record<string, unknown>);
         expect(back.id).toBe('d1');
         expect(back.name).toBe('Demo');

@@ -36,7 +36,12 @@ describe.skipIf(!enabled)('sync endpoint', () => {
             body: JSON.stringify({
                 baseVersion: version,
                 operations: [
-                    { entity: 'table', op: 'update', id: tableId, patch: { x: 999 } },
+                    {
+                        entity: 'table',
+                        op: 'update',
+                        id: tableId,
+                        patch: { x: 999 },
+                    },
                 ],
             }),
         });
@@ -55,7 +60,12 @@ describe.skipIf(!enabled)('sync endpoint', () => {
             body: JSON.stringify({
                 baseVersion: 1,
                 operations: [
-                    { entity: 'table', op: 'update', id: tableId, patch: { x: 1 } },
+                    {
+                        entity: 'table',
+                        op: 'update',
+                        id: tableId,
+                        patch: { x: 1 },
+                    },
                 ],
             }),
         });
@@ -63,14 +73,19 @@ describe.skipIf(!enabled)('sync endpoint', () => {
         expect(body.conflicts.length).toBeGreaterThan(0);
     });
 
-    it('rejects a batch for another user\'s diagram', async () => {
+    it("rejects a batch for another user's diagram", async () => {
         const tokenA = process.env.TEST_USER_A_JWT!;
         const res = await api(`/diagrams/${diagramB}/sync`, tokenA, {
             method: 'POST',
             body: JSON.stringify({
                 baseVersion: 1,
                 operations: [
-                    { entity: 'table', op: 'update', id: tableId, patch: { x: 1 } },
+                    {
+                        entity: 'table',
+                        op: 'update',
+                        id: tableId,
+                        patch: { x: 1 },
+                    },
                 ],
             }),
         });

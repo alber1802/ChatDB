@@ -66,7 +66,11 @@ authRouter.post('/login', loginRateLimit, async (req, res, next) => {
             if (fail.message && fail.cooldownUntil) {
                 throw new AppError(429, fail.message, 'cooldown');
             }
-            throw new AppError(401, 'Invalid login credentials', 'invalid_credentials');
+            throw new AppError(
+                401,
+                'Invalid login credentials',
+                'invalid_credentials'
+            );
         }
 
         const session = (await authRes.json()) as {

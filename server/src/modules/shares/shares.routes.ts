@@ -40,12 +40,7 @@ sharesRouter.post('/diagrams/:diagramId/shares', async (req, res, next) => {
                 `INSERT INTO diagram_shares (diagram_id, owner_id, shared_with, role)
                  VALUES ($1, $2, $3, $4)
                  RETURNING id, diagram_id, owner_id, shared_with, role, created_at`,
-                [
-                    req.params.diagramId,
-                    req.user!.id,
-                    body.sharedWith,
-                    body.role,
-                ]
+                [req.params.diagramId, req.user!.id, body.sharedWith, body.role]
             );
             const r = rows[0];
             return {

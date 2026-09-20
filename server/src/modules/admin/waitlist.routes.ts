@@ -55,15 +55,14 @@ adminWaitlist.patch('/admin/waitlist/:id', async (req, res, next) => {
                      approved_at = CASE WHEN $1 = 'approved' THEN NOW() ELSE approved_at END,
                      approved_by = CASE WHEN $1 = 'approved' THEN $3 ELSE approved_by END
                  WHERE id = $4`,
-                [
-                    body.status,
-                    body.notes ?? null,
-                    req.user!.id,
-                    req.params.id,
-                ]
+                [body.status, body.notes ?? null, req.user!.id, req.params.id]
             );
             if (!rowCount)
-                throw new AppError(404, 'Waitlist entry not found', 'not_found');
+                throw new AppError(
+                    404,
+                    'Waitlist entry not found',
+                    'not_found'
+                );
         });
         res.json({ ok: true });
     } catch (err) {

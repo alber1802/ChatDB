@@ -23,7 +23,11 @@ tablesRouter.get('/diagrams/:diagramId/tables', async (req, res, next) => {
 tablesRouter.get('/diagrams/:diagramId/tables/:id', async (req, res, next) => {
     try {
         const data = await withUserContext(req.user!.id, (client) =>
-            diagramsService.getTable(client, req.params.diagramId, req.params.id)
+            diagramsService.getTable(
+                client,
+                req.params.diagramId,
+                req.params.id
+            )
         );
         if (!data) throw new AppError(404, 'Table not found', 'not_found');
         res.json(data);
@@ -78,20 +82,23 @@ tablesRouter.patch('/tables/:id', async (req, res, next) => {
     }
 });
 
-tablesRouter.delete('/diagrams/:diagramId/tables/:id', async (req, res, next) => {
-    try {
-        await withUserContext(req.user!.id, (client) =>
-            diagramsService.deleteTable(
-                client,
-                req.params.diagramId,
-                req.params.id
-            )
-        );
-        res.status(204).send();
-    } catch (err) {
-        next(err);
+tablesRouter.delete(
+    '/diagrams/:diagramId/tables/:id',
+    async (req, res, next) => {
+        try {
+            await withUserContext(req.user!.id, (client) =>
+                diagramsService.deleteTable(
+                    client,
+                    req.params.diagramId,
+                    req.params.id
+                )
+            );
+            res.status(204).send();
+        } catch (err) {
+            next(err);
+        }
     }
-});
+);
 
 tablesRouter.delete('/diagrams/:diagramId/tables', async (req, res, next) => {
     try {

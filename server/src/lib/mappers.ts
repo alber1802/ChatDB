@@ -173,7 +173,9 @@ export function tableToRow(table: TableDto, diagramId: string, userId: string) {
 
 // ─── Relationships ───────────────────────────────────────────────────────────
 
-export function rowToRelationship(row: Record<string, unknown>): RelationshipDto {
+export function rowToRelationship(
+    row: Record<string, unknown>
+): RelationshipDto {
     return {
         id: String(row.id),
         name: String(row.name),

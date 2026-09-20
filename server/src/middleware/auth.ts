@@ -44,7 +44,9 @@ export const authenticate: RequestHandler = async (req, _res, next) => {
         })) as { payload: JwtPayload };
 
         if (!payload.sub) {
-            return next(new AppError(401, 'Invalid token payload', 'invalid_token'));
+            return next(
+                new AppError(401, 'Invalid token payload', 'invalid_token')
+            );
         }
 
         req.user = {

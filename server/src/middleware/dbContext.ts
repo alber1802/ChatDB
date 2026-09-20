@@ -20,9 +20,7 @@ declare global {
  * Prefer the helper for service-style handlers; use this when a route
  * needs req.db across multiple middleware steps.
  */
-export function withUserDbContext(
-    handler: RequestHandler
-): RequestHandler {
+export function withUserDbContext(handler: RequestHandler): RequestHandler {
     return async (req: Request, res: Response, next: NextFunction) => {
         if (!req.user?.id) {
             return next(new AppError(401, 'Unauthenticated', 'missing_token'));

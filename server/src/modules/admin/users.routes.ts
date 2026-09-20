@@ -70,7 +70,11 @@ adminUsersRouter.patch('/users/:id', async (req, res, next) => {
             sets.push(`updated_at = NOW()`);
 
             if (sets.length === 1) {
-                throw new AppError(400, 'No fields to update', 'validation_error');
+                throw new AppError(
+                    400,
+                    'No fields to update',
+                    'validation_error'
+                );
             }
 
             values.push(req.params.id);

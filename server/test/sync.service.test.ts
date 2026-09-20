@@ -97,7 +97,9 @@ describe('applyOperation — diagram patches', () => {
         const client = {
             query: vi.fn(async (sql: string) => {
                 if (sql.includes('SELECT version')) {
-                    return { rows: [{ version: 1, last_sync_session_id: null }] };
+                    return {
+                        rows: [{ version: 1, last_sync_session_id: null }],
+                    };
                 }
                 return { rows: [] };
             }),
@@ -124,13 +126,19 @@ describe('applyOperation — diagram patches', () => {
 // conflicts overwritten by another session") aunque nadie más tocó el
 // diagrama.
 describe('syncService.apply — conflict detection is per-session, not just per-version', () => {
-    const clientReturning = (version: number, lastSyncSessionId: string | null) =>
+    const clientReturning = (
+        version: number,
+        lastSyncSessionId: string | null
+    ) =>
         ({
             query: vi.fn(async (sql: string) => {
                 if (sql.includes('SELECT version')) {
                     return {
                         rows: [
-                            { version, last_sync_session_id: lastSyncSessionId },
+                            {
+                                version,
+                                last_sync_session_id: lastSyncSessionId,
+                            },
                         ],
                     };
                 }
