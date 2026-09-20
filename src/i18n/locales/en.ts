@@ -338,6 +338,9 @@ export const en = {
                 },
                 instructions_link: 'Need help? Watch how',
                 check_script_result: 'Check Script Result',
+                search_tables_placeholder: 'Search tables...',
+                max_tables_warning:
+                    'Due to performance limitations, you can import a maximum of {{max}} tables.',
             },
 
             cancel: 'Cancel',
@@ -456,6 +459,14 @@ export const en = {
                 'No schemas exist yet. Create your first schema to organize your tables.',
             create: 'Create',
             cancel: 'Cancel',
+        },
+
+        table_schema_dialog: {
+            schema_name_label: 'Schema Name',
+            schema_name_placeholder: 'Enter schema name.',
+            schema_name_example: 'e.g. {{schema}}.',
+            or_separator: 'or',
+            no_schemas_tooltip: 'No existing schemas available',
         },
 
         star_us_dialog: {

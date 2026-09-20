@@ -183,7 +183,9 @@ export const TableSchemaDialog: React.FC<TableSchemaDialogProps> = ({
                                 {allowSchemaCreation &&
                                 !allowSchemaSelection ? (
                                     <Label htmlFor="new-schema-name">
-                                        Schema Name
+                                        {t(
+                                            'table_schema_dialog.schema_name_label'
+                                        )}
                                     </Label>
                                 ) : null}
                                 <Input
@@ -192,7 +194,7 @@ export const TableSchemaDialog: React.FC<TableSchemaDialogProps> = ({
                                     onChange={(e) =>
                                         setNewSchemaName(e.target.value)
                                     }
-                                    placeholder={`Enter schema name.${defaultSchemaName ? ` e.g. ${defaultSchemaName}.` : ''}`}
+                                    placeholder={`${t('table_schema_dialog.schema_name_placeholder')}${defaultSchemaName ? ` ${t('table_schema_dialog.schema_name_example', { schema: defaultSchemaName })}` : ''}`}
                                     autoFocus
                                 />
                             </div>
@@ -203,7 +205,7 @@ export const TableSchemaDialog: React.FC<TableSchemaDialogProps> = ({
                                 <div className="relative">
                                     <Separator className="my-2" />
                                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
-                                        or
+                                        {t('table_schema_dialog.or_separator')}
                                     </span>
                                 </div>
                                 {allowSchemaSelection ? (
@@ -216,7 +218,11 @@ export const TableSchemaDialog: React.FC<TableSchemaDialogProps> = ({
                                             </span>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <p>No existing schemas available</p>
+                                            <p>
+                                                {t(
+                                                    'table_schema_dialog.no_schemas_tooltip'
+                                                )}
+                                            </p>
                                         </TooltipContent>
                                     </Tooltip>
                                 )}

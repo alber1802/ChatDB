@@ -347,6 +347,9 @@ export const es: LanguageTranslation = {
                 },
                 instructions_link: '¿Necesitas ayuda? mira cómo',
                 check_script_result: 'Revisa el resultado del script',
+                search_tables_placeholder: 'Buscar tablas...',
+                max_tables_warning:
+                    'Por limitaciones de rendimiento, podés importar un máximo de {{max}} tablas.',
             },
 
             cancel: 'Cancelar',
@@ -467,6 +470,14 @@ export const es: LanguageTranslation = {
                 'Aún no existen esquemas. Crea tu primer esquema para organizar tus tablas.',
             create: 'Crear',
             cancel: 'Cancelar',
+        },
+
+        table_schema_dialog: {
+            schema_name_label: 'Nombre del Esquema',
+            schema_name_placeholder: 'Ingresa el nombre del esquema.',
+            schema_name_example: 'ej. {{schema}}.',
+            or_separator: 'o',
+            no_schemas_tooltip: 'No hay esquemas existentes disponibles',
         },
 
         star_us_dialog: {

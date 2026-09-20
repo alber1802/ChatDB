@@ -378,8 +378,10 @@ export const SelectTables: React.FC<SelectTablesProps> = ({
                         >
                             <AlertCircle className="size-4 shrink-0" />
                             <span>
-                                Due to performance limitations, you can import a
-                                maximum of {MAX_TABLES_IN_DIAGRAM} tables.
+                                {t(
+                                    'new_diagram_dialog.import_database.max_tables_warning',
+                                    { max: MAX_TABLES_IN_DIAGRAM }
+                                )}
                             </span>
                         </div>
                     ) : null}
@@ -387,7 +389,9 @@ export const SelectTables: React.FC<SelectTablesProps> = ({
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                            placeholder="Search tables..."
+                            placeholder={t(
+                                'new_diagram_dialog.import_database.search_tables_placeholder'
+                            )}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="px-9"
