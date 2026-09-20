@@ -347,7 +347,8 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
         const tableClassName = useMemo(
             () =>
                 cn(
-                    'flex w-full flex-col border-2 bg-slate-50 dark:bg-slate-950 rounded-lg shadow-sm transition-transform duration-300',
+                    'flex w-full flex-col border-2 bg-slate-50 dark:bg-slate-950 rounded-lg transition-[border-color,box-shadow] duration-150',
+                    dragging ? 'shadow-lg' : 'shadow-sm',
                     table.isView ? 'border-dashed' : '',
                     selected || isTarget || isPartOfCreatingRelationship
                         ? 'border-primary'
@@ -384,6 +385,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                 ),
             [
                 selected,
+                dragging,
                 isOverlapping,
                 highlightOverlappingTables,
                 hasHighlightedCustomType,

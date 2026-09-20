@@ -119,7 +119,8 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
         const containerClassName = useMemo(
             () =>
                 cn(
-                    'relative flex h-full flex-col rounded-md border-2 shadow-sm',
+                    'relative flex h-full flex-col rounded-md border-2 transition-[border-color,box-shadow] duration-150',
+                    dragging ? 'shadow-lg' : 'shadow-sm',
                     selected ? 'border-primary' : 'border-transparent',
                     isDiffNewArea
                         ? 'outline outline-[3px] outline-green-500 dark:outline-green-900 outline-offset-[5px]'
@@ -128,7 +129,7 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
                         ? 'outline outline-[3px] outline-red-500 dark:outline-red-900 outline-offset-[5px]'
                         : ''
                 ),
-            [selected, isDiffNewArea, isDiffAreaRemoved]
+            [selected, dragging, isDiffNewArea, isDiffAreaRemoved]
         );
 
         return (

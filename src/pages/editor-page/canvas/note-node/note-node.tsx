@@ -142,7 +142,8 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
     return (
         <div
             className={cn(
-                'flex h-full flex-col overflow-hidden rounded-[6px] border',
+                'flex h-full flex-col overflow-hidden rounded-[6px] border transition-[border-color,box-shadow] duration-150',
+                dragging ? 'shadow-lg' : '',
                 selected
                     ? 'border-primary'
                     : 'border-slate-500 dark:border-slate-600'
