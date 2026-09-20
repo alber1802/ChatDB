@@ -153,7 +153,7 @@ export const DiagramListItem: React.FC<DiagramListItemProps> = ({
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                     onClick={() => setIsDeleteOpen(true)}
-                                    className="cursor-pointer gap-2 text-red-600 focus:bg-red-500/10 focus:text-red-600"
+                                    className="cursor-pointer gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive"
                                 >
                                     <Trash2 className="size-3.5" />
                                     Eliminar
@@ -197,7 +197,7 @@ export const DiagramListItem: React.FC<DiagramListItemProps> = ({
                                 await onDelete(diagram.id);
                                 setIsDeleteOpen(false);
                             }}
-                            className="bg-red-600 text-white hover:bg-red-700"
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                             Eliminar
                         </AlertDialogAction>

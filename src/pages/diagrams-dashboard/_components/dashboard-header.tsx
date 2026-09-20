@@ -45,19 +45,19 @@ export const DashboardHeader: React.FC = () => {
                 return {
                     label: 'Super Admin',
                     className:
-                        'bg-red-500/10 text-red-500 border border-red-500/20',
+                        'bg-destructive/10 text-destructive border border-destructive/20',
                 };
             case 'admin':
                 return {
                     label: 'Admin',
                     className:
-                        'bg-blue-500/10 text-blue-500 border border-blue-500/20',
+                        'bg-info/10 text-info border border-info/20',
                 };
             default:
                 return {
                     label: 'User',
                     className:
-                        'bg-green-500/10 text-green-500 border border-green-500/20',
+                        'bg-muted text-muted-foreground border border-border',
                 };
         }
     };
@@ -178,7 +178,7 @@ export const DashboardHeader: React.FC = () => {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 onClick={handleSignOut}
-                                className="cursor-pointer gap-2 text-red-600 focus:text-red-600"
+                                className="cursor-pointer gap-2 text-destructive focus:text-destructive"
                             >
                                 <LogOut className="size-4" />
                                 Cerrar Sesión

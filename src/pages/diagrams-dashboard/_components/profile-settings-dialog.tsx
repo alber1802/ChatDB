@@ -177,7 +177,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({
                             className="space-y-4"
                         >
                             {profileSuccess && (
-                                <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-600 dark:text-emerald-400">
+                                <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-sm text-success">
                                     <CheckCircle2 className="size-4 flex-shrink-0" />
                                     <span>¡Perfil actualizado con éxito!</span>
                                 </div>
@@ -251,7 +251,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({
                             className="space-y-4"
                         >
                             {passwordSuccess && (
-                                <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-600 dark:text-emerald-400">
+                                <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-sm text-success">
                                     <CheckCircle2 className="size-4 flex-shrink-0" />
                                     <span>
                                         ¡Contraseña actualizada con éxito!
