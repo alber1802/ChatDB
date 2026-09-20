@@ -46,8 +46,7 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
     onCreateNew,
 }) => {
     const inputRef = useRef<HTMLInputElement>(null);
-    const shortcutLabel =
-        getOperatingSystem() === 'mac' ? '⌘K' : 'Ctrl+K';
+    const shortcutLabel = getOperatingSystem() === 'mac' ? '⌘K' : 'Ctrl+K';
 
     useHotkeys(
         'mod+k',

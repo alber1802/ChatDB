@@ -167,7 +167,7 @@ const DiagramsDashboardPageComponent: React.FC = () => {
 
                     {/* Content Section */}
                     <div className="mt-6">
-                        {!loading && (
+                        {!loading && diagrams.length > 0 && (
                             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                                 Todos los diagramas
                             </h2>

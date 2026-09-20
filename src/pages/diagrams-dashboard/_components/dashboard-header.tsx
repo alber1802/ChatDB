@@ -50,8 +50,7 @@ export const DashboardHeader: React.FC = () => {
             case 'admin':
                 return {
                     label: 'Admin',
-                    className:
-                        'bg-info/10 text-info border border-info/20',
+                    className: 'bg-info/10 text-info border border-info/20',
                 };
             default:
                 return {
