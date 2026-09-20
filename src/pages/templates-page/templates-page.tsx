@@ -90,7 +90,7 @@ const TemplatesPageComponent: React.FC = () => {
                     {!templates ? (
                         <Spinner
                             size={'large'}
-                            className="mt-20 text-pink-600"
+                            className="mt-20 text-primary"
                         />
                     ) : (
                         <div className="mt-6 flex w-full flex-col-reverse gap-4 md:flex-row">

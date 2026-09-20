@@ -105,7 +105,7 @@ export const ExportImageDialog: React.FC<ExportImageDialogProps> = ({
                                     <div className="flex items-start gap-3">
                                         <Checkbox
                                             id="pattern-checkbox"
-                                            className="mt-1 data-[state=checked]:border-pink-600 data-[state=checked]:bg-pink-600 data-[state=checked]:text-white"
+                                            className="mt-1 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                                             checked={includePatternBG}
                                             onCheckedChange={(value) =>
                                                 setIncludePatternBG(
@@ -132,7 +132,7 @@ export const ExportImageDialog: React.FC<ExportImageDialogProps> = ({
                                     <div className="flex items-start gap-3">
                                         <Checkbox
                                             id="transparent-checkbox"
-                                            className="mt-1 data-[state=checked]:border-pink-600 data-[state=checked]:bg-pink-600 data-[state=checked]:text-white"
+                                            className="mt-1 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                                             checked={transparent}
                                             onCheckedChange={(value) =>
                                                 setTransparent(value as boolean)

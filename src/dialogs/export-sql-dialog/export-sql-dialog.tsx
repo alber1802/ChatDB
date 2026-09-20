@@ -206,7 +206,7 @@ export const ExportSQLDialog: React.FC<ExportSQLDialogProps> = ({
                                     key={0}
                                     href="mailto:support@chartdb.io"
                                     target="_blank"
-                                    className="text-pink-600 hover:underline"
+                                    className="text-primary hover:underline"
                                     rel="noreferrer"
                                 />,
                             ]}
@@ -221,7 +221,7 @@ export const ExportSQLDialog: React.FC<ExportSQLDialogProps> = ({
                                     href="https://github.com/chartdb/chartdb"
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-pink-600 hover:underline"
+                                    className="text-primary hover:underline"
                                 />,
                             ]}
                         />

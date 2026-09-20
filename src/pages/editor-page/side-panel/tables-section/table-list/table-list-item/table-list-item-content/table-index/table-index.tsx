@@ -127,7 +127,7 @@ export const TableIndex: React.FC<TableIndexProps> = ({
             {index.comments ? (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className="absolute right-0 top-0 size-0 border-l-[10px] border-t-[10px] border-l-transparent border-t-pink-500" />
+                        <div className="absolute right-0 top-0 size-0 border-l-[10px] border-t-[10px] border-l-transparent border-t-info" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                         <div>

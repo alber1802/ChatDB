@@ -150,7 +150,7 @@ const TemplatePageComponent: React.FC = () => {
                     </div>
                 </nav>
                 {!template ? (
-                    <Spinner size={'large'} className="mt-20 text-pink-600" />
+                    <Spinner size={'large'} className="mt-20 text-primary" />
                 ) : (
                     <div className="flex flex-1 flex-col p-3 pb-5 text-center md:px-28 md:text-left">
                         <Breadcrumb className="mb-2">

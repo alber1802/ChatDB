@@ -352,7 +352,7 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                         ? 'h-8 max-h-8 border-t opacity-100'
                         : 'h-0 max-h-0 border-t-0 py-0 my-0 overflow-hidden opacity-0 pointer-events-none',
                     {
-                        'bg-pink-100 dark:bg-pink-900':
+                        'bg-primary/10 dark:bg-primary/20':
                             highlighted && !isCustomTypeHighlighted && visible,
                         'bg-yellow-100 dark:bg-yellow-900':
                             isCustomTypeHighlighted && visible,
@@ -373,13 +373,13 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                     <>
                         <Handle
                             id={`${RIGHT_HANDLE_ID_PREFIX}${field.id}`}
-                            className={`!h-4 !w-4 !border-2 !bg-pink-600 ${!focused || readonly || isTargetFromView ? '!invisible' : ''}`}
+                            className={`!h-4 !w-4 !border-2 !bg-primary ${!focused || readonly || isTargetFromView ? '!invisible' : ''}`}
                             position={Position.Right}
                             type="source"
                         />
                         <Handle
                             id={`${LEFT_HANDLE_ID_PREFIX}${field.id}`}
-                            className={`!h-4 !w-4 !border-2 !bg-pink-600 ${!focused || readonly || isTargetFromView ? '!invisible' : ''}`}
+                            className={`!h-4 !w-4 !border-2 !bg-primary ${!focused || readonly || isTargetFromView ? '!invisible' : ''}`}
                             position={Position.Left}
                             type="source"
                         />
@@ -624,7 +624,7 @@ export const TableNodeField: React.FC<TableNodeFieldProps> = React.memo(
                                 openEditTableOnField();
                             }}
                         >
-                            <Pencil className="!size-3.5 text-pink-600" />
+                            <Pencil className="!size-3.5 text-primary" />
                         </Button>
                     </div>
                 )}

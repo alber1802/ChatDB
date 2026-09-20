@@ -350,7 +350,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                     'flex w-full flex-col border-2 bg-slate-50 dark:bg-slate-950 rounded-lg shadow-sm transition-transform duration-300',
                     table.isView ? 'border-dashed' : '',
                     selected || isTarget || isPartOfCreatingRelationship
-                        ? 'border-pink-600'
+                        ? 'border-primary'
                         : 'border-slate-500 dark:border-slate-700',
                     isOverlapping
                         ? 'ring-2 ring-offset-slate-50 dark:ring-offset-slate-900 ring-blue-500 ring-offset-2'

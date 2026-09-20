@@ -382,7 +382,7 @@ export const RelationshipEdge: React.FC<EdgeProps<RelationshipEdgeType>> =
                         fill="none"
                         className={cn([
                             'react-flow__edge-path',
-                            `!stroke-2 ${selected ? '!stroke-pink-600' : '!stroke-slate-400'}`,
+                            `!stroke-2 ${selected ? '!stroke-primary' : '!stroke-slate-400'}`,
                             {
                                 '!stroke-green-500 !stroke-[3px]':
                                     isDiffNewRelationship,
@@ -414,11 +414,11 @@ export const RelationshipEdge: React.FC<EdgeProps<RelationshipEdgeType>> =
                         >
                             <button
                                 onClick={handleIndicatorClick}
-                                className="relative flex size-6 items-center justify-center rounded-full border-2 border-pink-600 bg-background shadow-lg transition-all hover:scale-110 hover:bg-pink-50"
+                                className="relative flex size-6 items-center justify-center rounded-full border-2 border-primary bg-background shadow-lg transition-all hover:scale-110 hover:bg-primary/10"
                                 title="Edit relationship"
                                 style={{ zIndex: 10 }}
                             >
-                                <EllipsisIcon className="size-4 text-pink-600" />
+                                <EllipsisIcon className="size-4 text-primary" />
                             </button>
                         </foreignObject>
                     )}

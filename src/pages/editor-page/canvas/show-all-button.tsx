@@ -46,7 +46,7 @@ export const ShowAllButton: React.FC<ShowAllButtonProps> = () => {
             </div>
 
             <div className="hidden items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 shadow-lg sm:flex">
-                <div className="flex size-6 items-center justify-center rounded-full bg-pink-600">
+                <div className="flex size-6 items-center justify-center rounded-full bg-info">
                     <Info className="size-4 text-white" />
                 </div>
                 <span className="text-sm text-white">

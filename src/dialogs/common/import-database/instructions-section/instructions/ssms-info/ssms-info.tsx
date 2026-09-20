@@ -50,7 +50,7 @@ export const SSMSInfo = React.forwardRef<
         >
             <HoverCardTrigger ref={ref} asChild>
                 <div
-                    className="flex flex-row items-center gap-1 text-pink-600"
+                    className="flex flex-row items-center gap-1 text-info"
                     onClick={() => {
                         setOpen?.(!open);
                     }}

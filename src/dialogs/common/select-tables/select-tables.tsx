@@ -631,7 +631,7 @@ export const SelectTables: React.FC<SelectTablesProps> = ({
                                                     )}
                                                 </span>
                                                 {isSelected && (
-                                                    <Check className="size-4 text-pink-600" />
+                                                    <Check className="size-4 text-primary" />
                                                 )}
                                             </div>
                                         );
@@ -664,7 +664,7 @@ export const SelectTables: React.FC<SelectTablesProps> = ({
                 <Button
                     onClick={handleConfirm}
                     disabled={selectedTables.size === 0 || isImporting}
-                    className="bg-pink-500 text-white hover:bg-pink-600"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                     {isImporting ? (
                         <>

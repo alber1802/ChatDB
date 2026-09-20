@@ -99,7 +99,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ readonly }) => {
                                     className={cn(
                                         'transition-all duration-200',
                                         {
-                                            'bg-pink-500 text-white hover:bg-pink-600 hover:text-white':
+                                            'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground':
                                                 hasActiveFilter,
                                         }
                                     )}

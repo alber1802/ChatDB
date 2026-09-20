@@ -142,7 +142,7 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
             className={cn(
                 'flex h-full flex-col overflow-hidden rounded-[6px] border',
                 selected
-                    ? 'border-pink-600'
+                    ? 'border-primary'
                     : 'border-slate-500 dark:border-slate-600'
             )}
             style={{
@@ -163,8 +163,8 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                     minWidth={200}
                     minHeight={150}
                     isVisible={selected}
-                    lineClassName="!border-pink-500"
-                    handleClassName="!h-3 !w-3 !bg-pink-500 !rounded-full"
+                    lineClassName="!border-primary"
+                    handleClassName="!h-3 !w-3 !bg-primary !rounded-full"
                 />
             ) : null}
 

@@ -120,7 +120,7 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
             () =>
                 cn(
                     'relative flex h-full flex-col rounded-md border-2 shadow-sm',
-                    selected ? 'border-pink-600' : 'border-transparent',
+                    selected ? 'border-primary' : 'border-transparent',
                     isDiffNewArea
                         ? 'outline outline-[3px] outline-green-500 dark:outline-green-900 outline-offset-[5px]'
                         : '',
@@ -162,7 +162,7 @@ export const AreaNode: React.FC<NodeProps<AreaNodeType>> = React.memo(
                         <NodeResizer
                             isVisible={focused}
                             lineClassName="!border-4 !border-transparent"
-                            handleClassName="!h-[10px] !w-[10px] !rounded-full !bg-pink-600"
+                            handleClassName="!h-[10px] !w-[10px] !rounded-full !bg-primary"
                             minHeight={100}
                             minWidth={100}
                         />

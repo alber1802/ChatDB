@@ -81,13 +81,13 @@ export const TableNodeDependencyIndicator: React.FC<TableNodeDependencyIndicator
                     <>
                         <Handle
                             id={`${TOP_SOURCE_HANDLE_ID_PREFIX}${table.id}`}
-                            className={`!h-4 !w-4 !border-2 !bg-pink-600 ${!focused || isTargetFromTable ? '!invisible' : ''}`}
+                            className={`!h-4 !w-4 !border-2 !bg-primary ${!focused || isTargetFromTable ? '!invisible' : ''}`}
                             position={Position.Top}
                             type="source"
                         />
                         <Handle
                             id={`${BOTTOM_SOURCE_HANDLE_ID_PREFIX}${table.id}`}
-                            className={`!z-10 !h-4 !w-4 !border-2 !bg-pink-600 ${!focused || isTargetFromTable ? '!invisible' : ''}`}
+                            className={`!z-10 !h-4 !w-4 !border-2 !bg-primary ${!focused || isTargetFromTable ? '!invisible' : ''}`}
                             position={Position.Bottom}
                             type="source"
                         />
