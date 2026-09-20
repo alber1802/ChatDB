@@ -123,6 +123,7 @@ export const DiagramListItem: React.FC<DiagramListItemProps> = ({
                                 <Button
                                     variant="ghost"
                                     size="icon"
+                                    aria-label="Más acciones"
                                     className="size-8 cursor-pointer rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
                                 >
                                     <MoreVertical className="size-4" />

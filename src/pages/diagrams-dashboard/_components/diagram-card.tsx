@@ -106,6 +106,7 @@ export const DiagramCard: React.FC<DiagramCardProps> = ({
                                 <Button
                                     variant="ghost"
                                     size="icon"
+                                    aria-label="Más acciones"
                                     className="size-8 cursor-pointer rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
                                 >
                                     <MoreVertical className="size-4" />

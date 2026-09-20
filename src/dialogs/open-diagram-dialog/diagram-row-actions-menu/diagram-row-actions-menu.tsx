@@ -61,6 +61,7 @@ export const DiagramRowActionsMenu: React.FC<DiagramRowActionsMenuProps> = ({
                 <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Más acciones"
                     className="size-8 p-0"
                     onClick={(e) => e.stopPropagation()}
                 >

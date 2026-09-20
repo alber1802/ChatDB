@@ -281,6 +281,14 @@ function TreeNode<Type extends string, Context extends Record<Type, unknown>>({
                             isExpanded && 'rotate-90',
                             'transition-transform duration-200'
                         )}
+                        aria-label={
+                            node.isFolder
+                                ? isExpanded
+                                    ? 'Contraer'
+                                    : 'Expandir'
+                                : undefined
+                        }
+                        aria-expanded={node.isFolder ? isExpanded : undefined}
                         onClick={(e) => {
                             e.stopPropagation();
                             if (node.isFolder) {
