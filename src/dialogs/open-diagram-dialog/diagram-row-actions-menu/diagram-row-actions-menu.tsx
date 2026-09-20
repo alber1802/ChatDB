@@ -7,7 +7,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/dropdown-menu/dropdown-menu';
 import { Button } from '@/components/button/button';
-import { Ellipsis, Layers2, SquareArrowOutUpRight, Trash2 } from 'lucide-react';
+import { Copy, Ellipsis, ExternalLink, Trash2 } from 'lucide-react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import type { Diagram } from '@/lib/domain';
 import { useStorage } from '@/hooks/use-storage';
@@ -73,7 +73,7 @@ export const DiagramRowActionsMenu: React.FC<DiagramRowActionsMenuProps> = ({
                     className="flex justify-between gap-4"
                 >
                     {t('open_diagram_dialog.diagram_actions.open')}
-                    <SquareArrowOutUpRight className="size-3.5" />
+                    <ExternalLink className="size-3.5" />
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
@@ -81,7 +81,7 @@ export const DiagramRowActionsMenu: React.FC<DiagramRowActionsMenuProps> = ({
                     className="flex justify-between gap-4"
                 >
                     {t('open_diagram_dialog.diagram_actions.duplicate')}
-                    <Layers2 className="size-3.5" />
+                    <Copy className="size-3.5" />
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
