@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import TimeAgo from 'timeago-react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useSyncStatus } from '@/hooks/use-sync-status';
@@ -92,8 +93,10 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
         updateLocale();
     }, [i18n.language]);
 
+    let content: React.ReactNode;
+
     if (status === 'saving') {
-        return (
+        content = (
             <Badge
                 variant="secondary"
                 className="flex gap-1.5 whitespace-nowrap"
@@ -102,10 +105,8 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
                 <span>Guardando…</span>
             </Badge>
         );
-    }
-
-    if (status === 'offline') {
-        return (
+    } else if (status === 'offline') {
+        content = (
             <Badge
                 variant="secondary"
                 className="flex gap-1.5 whitespace-nowrap"
@@ -114,10 +115,8 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
                 <span>Sin conexión</span>
             </Badge>
         );
-    }
-
-    if (status === 'error') {
-        return (
+    } else if (status === 'error') {
+        content = (
             <Tooltip>
                 <TooltipTrigger asChild>
                     <button onClick={retry} type="button">
@@ -133,25 +132,39 @@ export const LastSaved: React.FC<LastSavedProps> = () => {
                 <TooltipContent>{errorMessage ?? 'Reintentar'}</TooltipContent>
             </Tooltip>
         );
+    } else {
+        content = (
+            <Tooltip>
+                <TooltipTrigger>
+                    <Badge
+                        variant="secondary"
+                        className="flex gap-1.5 whitespace-nowrap"
+                    >
+                        <Save size={16} />
+                        <TimeAgo
+                            datetime={currentDiagram.updatedAt}
+                            locale={language}
+                        />
+                    </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                    {currentDiagram.updatedAt.toLocaleString()}
+                </TooltipContent>
+            </Tooltip>
+        );
     }
 
     return (
-        <Tooltip>
-            <TooltipTrigger>
-                <Badge
-                    variant="secondary"
-                    className="flex gap-1.5 whitespace-nowrap"
-                >
-                    <Save size={16} />
-                    <TimeAgo
-                        datetime={currentDiagram.updatedAt}
-                        locale={language}
-                    />
-                </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-                {currentDiagram.updatedAt.toLocaleString()}
-            </TooltipContent>
-        </Tooltip>
+        <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+                key={status}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+            >
+                {content}
+            </motion.div>
+        </AnimatePresence>
     );
 };
