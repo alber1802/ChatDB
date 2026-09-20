@@ -53,6 +53,7 @@ import { useDiff } from '@/context/diff-context/use-diff';
 import { TableNodeStatus } from './table-node-status/table-node-status';
 import { TableEditMode } from './table-edit-mode/table-edit-mode';
 import { useCanvas } from '@/hooks/use-canvas';
+import equal from 'fast-deep-equal';
 
 export const TABLE_RELATIONSHIP_SOURCE_HANDLE_ID_PREFIX = 'table_rel_source_';
 export const TABLE_RELATIONSHIP_TARGET_HANDLE_ID_PREFIX = 'table_rel_target_';
@@ -70,6 +71,30 @@ export type TableNodeType = Node<
     },
     'table'
 >;
+
+const arePropsEqual = (
+    prevProps: NodeProps<TableNodeType>,
+    nextProps: NodeProps<TableNodeType>
+) => {
+    return (
+        prevProps.id === nextProps.id &&
+        prevProps.selected === nextProps.selected &&
+        prevProps.dragging === nextProps.dragging &&
+        prevProps.data.table === nextProps.data.table &&
+        prevProps.data.isOverlapping === nextProps.data.isOverlapping &&
+        prevProps.data.highlightOverlappingTables ===
+            nextProps.data.highlightOverlappingTables &&
+        prevProps.data.hasHighlightedCustomType ===
+            nextProps.data.hasHighlightedCustomType &&
+        prevProps.data.highlightTable === nextProps.data.highlightTable &&
+        prevProps.data.isRelationshipCreatingTarget ===
+            nextProps.data.isRelationshipCreatingTarget &&
+        equal(
+            prevProps.data.targetEdgeCounts,
+            nextProps.data.targetEdgeCounts
+        )
+    );
+};
 
 export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
     ({
@@ -706,7 +731,8 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                 </div>
             </TableNodeContextMenu>
         );
-    }
+    },
+    arePropsEqual
 );
 
 TableNode.displayName = 'TableNode';
