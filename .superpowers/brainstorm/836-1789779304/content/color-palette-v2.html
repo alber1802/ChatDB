@@ -1,0 +1,148 @@
+<h2>Más opciones de color de marca — sólidos y degradados sutiles</h2>
+<p class="subtitle">Los degradados se usan solo en el botón CTA principal / acento puntual, nunca como fondo general — así no cae en "landing page". Comparalos con las 4 sólidas de antes.</p>
+
+<style>
+  .pal-card { border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
+  .pal-row { display: flex; }
+  .pal-half { flex: 1; padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .pal-half.light { background: #ffffff; color: #0f172a; }
+  .pal-half.dark { background: #0b1220; color: #e2e8f0; }
+  .pal-swatch { width: 100%; height: 34px; border-radius: 8px; }
+  .pal-btn { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 7px; font-size: 13px; font-weight: 500; color: white; width: fit-content; }
+  .pal-sidebar-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 7px; font-size: 13px; width: fit-content; font-weight: 500; }
+  .pal-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; width: fit-content; }
+  .pal-name { font-size: 15px; font-weight: 600; padding: 12px 16px 4px; }
+  .pal-hex { font-size: 11px; opacity: 0.6; padding: 0 16px 10px; font-family: monospace; }
+</style>
+
+<div class="cards" style="grid-template-columns: repeat(2, 1fr);">
+
+  <div class="card" data-choice="grad-indigo-violet" onclick="toggleSelect(this)">
+    <div class="pal-name" style="background:#12141c;color:#fff;">E · Degradado Indigo→Violeta</div>
+    <div class="pal-hex" style="background:#12141c;color:#9ca3af;">linear-gradient(#4F46E5→#8B5CF6) — solo en CTA, resto sólido indigo</div>
+    <div class="pal-card">
+      <div class="pal-row">
+        <div class="pal-half light">
+          <div class="pal-swatch" style="background:linear-gradient(135deg,#4F46E5,#8B5CF6);"></div>
+          <button class="pal-btn" style="background:linear-gradient(135deg,#4F46E5,#8B5CF6);">+ Nuevo diagrama</button>
+          <div class="pal-sidebar-item" style="background:#EEF2FF;color:#4F46E5;">Tablas</div>
+          <div class="pal-badge" style="background:#EEF2FF;color:#4338CA;">Guardado</div>
+        </div>
+        <div class="pal-half dark">
+          <div class="pal-swatch" style="background:linear-gradient(135deg,#818CF8,#A78BFA);"></div>
+          <button class="pal-btn" style="background:linear-gradient(135deg,#818CF8,#A78BFA);color:#160f2e;">+ Nuevo diagrama</button>
+          <div class="pal-sidebar-item" style="background:#1e2138;color:#A5B4FC;">Tablas</div>
+          <div class="pal-badge" style="background:#1e2138;color:#A5B4FC;">Guardado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="grad-blue-cyan" onclick="toggleSelect(this)">
+    <div class="pal-name" style="background:#12141c;color:#fff;">F · Degradado Azul→Cian</div>
+    <div class="pal-hex" style="background:#12141c;color:#9ca3af;">linear-gradient(#2563EB→#06B6D4) — técnico, evoca flujo de datos</div>
+    <div class="pal-card">
+      <div class="pal-row">
+        <div class="pal-half light">
+          <div class="pal-swatch" style="background:linear-gradient(135deg,#2563EB,#06B6D4);"></div>
+          <button class="pal-btn" style="background:linear-gradient(135deg,#2563EB,#06B6D4);">+ Nuevo diagrama</button>
+          <div class="pal-sidebar-item" style="background:#EFF6FF;color:#2563EB;">Tablas</div>
+          <div class="pal-badge" style="background:#EFF6FF;color:#1D4ED8;">Guardado</div>
+        </div>
+        <div class="pal-half dark">
+          <div class="pal-swatch" style="background:linear-gradient(135deg,#60A5FA,#22D3EE);"></div>
+          <button class="pal-btn" style="background:linear-gradient(135deg,#60A5FA,#22D3EE);color:#06222b;">+ Nuevo diagrama</button>
+          <div class="pal-sidebar-item" style="background:#16233d;color:#93c5fd;">Tablas</div>
+          <div class="pal-badge" style="background:#16233d;color:#93c5fd;">Guardado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="warm-amber" onclick="toggleSelect(this)">
+    <div class="pal-name" style="background:#12141c;color:#fff;">G · Ámbar cálido (sólido)</div>
+    <div class="pal-hex" style="background:#12141c;color:#9ca3af;">#D97706 light · #FBBF24 dark — familia cálida, estilo Raycast, se aleja del genérico "azul SaaS"</div>
+    <div class="pal-card">
+      <div class="pal-row">
+        <div class="pal-half light">
+          <div class="pal-swatch" style="background:#D97706;"></div>
+          <button class="pal-btn" style="background:#D97706;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#FFFBEB;color:#B45309;">Tablas</div>
+          <div class="pal-badge" style="background:#FFFBEB;color:#B45309;">Guardado</div>
+        </div>
+        <div class="pal-half dark">
+          <div class="pal-swatch" style="background:#FBBF24;"></div>
+          <button class="pal-btn" style="background:#FBBF24;color:#241a02;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#2b2007;color:#FDE68A;">Tablas</div>
+          <div class="pal-badge" style="background:#2b2007;color:#FDE68A;">Guardado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="grad-amber-rose" onclick="toggleSelect(this)">
+    <div class="pal-name" style="background:#12141c;color:#fff;">H · Degradado Ámbar→Rosa</div>
+    <div class="pal-hex" style="background:#12141c;color:#9ca3af;">linear-gradient(#F59E0B→#F43F5E) — más expresivo, guiño al pink original sin quedarse ahí</div>
+    <div class="pal-card">
+      <div class="pal-row">
+        <div class="pal-half light">
+          <div class="pal-swatch" style="background:linear-gradient(135deg,#F59E0B,#F43F5E);"></div>
+          <button class="pal-btn" style="background:linear-gradient(135deg,#F59E0B,#F43F5E);">+ Nuevo diagrama</button>
+          <div class="pal-sidebar-item" style="background:#FFF1F2;color:#E11D48;">Tablas</div>
+          <div class="pal-badge" style="background:#FFF1F2;color:#BE123C;">Guardado</div>
+        </div>
+        <div class="pal-half dark">
+          <div class="pal-swatch" style="background:linear-gradient(135deg,#FBBF24,#FB7185);"></div>
+          <button class="pal-btn" style="background:linear-gradient(135deg,#FBBF24,#FB7185);color:#2b0a10;">+ Nuevo diagrama</button>
+          <div class="pal-sidebar-item" style="background:#331119;color:#FDA4AF;">Tablas</div>
+          <div class="pal-badge" style="background:#331119;color:#FDA4AF;">Guardado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="mono-minimal" onclick="toggleSelect(this)">
+    <div class="pal-name" style="background:#12141c;color:#fff;">I · Monocromo + acento mínimo</div>
+    <div class="pal-hex" style="background:#12141c;color:#9ca3af;">Casi negro/blanco (estilo Vercel), el color aparece solo en focus/selección — máxima seriedad</div>
+    <div class="pal-card">
+      <div class="pal-row">
+        <div class="pal-half light">
+          <div class="pal-swatch" style="background:#111827;"></div>
+          <button class="pal-btn" style="background:#111827;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#F3F4F6;color:#111827;border-left:2px solid #4F46E5;">Tablas</div>
+          <div class="pal-badge" style="background:#F3F4F6;color:#374151;">Guardado</div>
+        </div>
+        <div class="pal-half dark">
+          <div class="pal-swatch" style="background:#F9FAFB;"></div>
+          <button class="pal-btn" style="background:#F9FAFB;color:#111827;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#1f2430;color:#e5e7eb;border-left:2px solid #818CF8;">Tablas</div>
+          <div class="pal-badge" style="background:#1f2430;color:#e5e7eb;">Guardado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="grad-teal-indigo" onclick="toggleSelect(this)">
+    <div class="pal-name" style="background:#12141c;color:#fff;">J · Degradado Teal→Indigo</div>
+    <div class="pal-hex" style="background:#12141c;color:#9ca3af;">linear-gradient(#0D9488→#4F46E5) — combina las dos familias "técnicas" más pedidas</div>
+    <div class="pal-card">
+      <div class="pal-row">
+        <div class="pal-half light">
+          <div class="pal-swatch" style="background:linear-gradient(135deg,#0D9488,#4F46E5);"></div>
+          <button class="pal-btn" style="background:linear-gradient(135deg,#0D9488,#4F46E5);">+ Nuevo diagrama</button>
+          <div class="pal-sidebar-item" style="background:#F0FDFA;color:#0D9488;">Tablas</div>
+          <div class="pal-badge" style="background:#F0FDFA;color:#0F766E;">Guardado</div>
+        </div>
+        <div class="pal-half dark">
+          <div class="pal-swatch" style="background:linear-gradient(135deg,#2DD4BF,#818CF8);"></div>
+          <button class="pal-btn" style="background:linear-gradient(135deg,#2DD4BF,#818CF8);color:#08201d;">+ Nuevo diagrama</button>
+          <div class="pal-sidebar-item" style="background:#0f2a27;color:#5eead4;">Tablas</div>
+          <div class="pal-badge" style="background:#0f2a27;color:#5eead4;">Guardado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="section label">Recordatorio: de la pantalla anterior seguían disponibles A·Indigo, B·Teal, C·Azul acero, D·Violeta (sólidas). Elegí la que prefieras de cualquiera de las dos pantallas, o pedime mezclar (ej: "sólido en la UI, degradado solo en el botón de crear").</p>

@@ -1,0 +1,107 @@
+<h2>¿Cuál color de marca se siente más "ChartDB"?</h2>
+<p class="subtitle">Reemplaza el pink-600 hardcodeado actual. Cada opción muestra el acento sobre fondo claro y oscuro, en un botón, un estado activo de sidebar y un badge — así se ve en contexto, no solo el swatch aislado.</p>
+
+<style>
+  .pal-card { border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
+  .pal-row { display: flex; }
+  .pal-half { flex: 1; padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .pal-half.light { background: #ffffff; color: #0f172a; }
+  .pal-half.dark { background: #0b1220; color: #e2e8f0; }
+  .pal-swatch { width: 100%; height: 34px; border-radius: 8px; }
+  .pal-btn { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 7px; font-size: 13px; font-weight: 500; color: white; width: fit-content; }
+  .pal-sidebar-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 7px; font-size: 13px; width: fit-content; font-weight: 500; }
+  .pal-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; width: fit-content; }
+  .pal-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.55; margin-bottom: 2px; }
+  .pal-name { font-size: 15px; font-weight: 600; padding: 12px 16px 4px; }
+  .pal-hex { font-size: 11px; opacity: 0.6; padding: 0 16px 10px; font-family: monospace; }
+</style>
+
+<div class="cards" style="grid-template-columns: repeat(2, 1fr);">
+
+  <div class="card" data-choice="indigo" onclick="toggleSelect(this)">
+    <div class="pal-name" style="background:#12141c;color:#fff;">A · Indigo técnico</div>
+    <div class="pal-hex" style="background:#12141c;color:#9ca3af;">#4F46E5 light · #818CF8 dark — estilo Linear/Stripe</div>
+    <div class="pal-card">
+      <div class="pal-row">
+        <div class="pal-half light">
+          <div class="pal-swatch" style="background:#4F46E5;"></div>
+          <button class="pal-btn" style="background:#4F46E5;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#EEF2FF;color:#4F46E5;">Tablas</div>
+          <div class="pal-badge" style="background:#EEF2FF;color:#4338CA;">Guardado</div>
+        </div>
+        <div class="pal-half dark">
+          <div class="pal-swatch" style="background:#818CF8;"></div>
+          <button class="pal-btn" style="background:#818CF8;color:#0b1220;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#1e2138;color:#A5B4FC;">Tablas</div>
+          <div class="pal-badge" style="background:#1e2138;color:#A5B4FC;">Guardado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="teal" onclick="toggleSelect(this)">
+    <div class="pal-name" style="background:#12141c;color:#fff;">B · Teal técnico</div>
+    <div class="pal-hex" style="background:#12141c;color:#9ca3af;">#0D9488 light · #2DD4BF dark — evoca "datos/DB", distinto de Supabase green</div>
+    <div class="pal-card">
+      <div class="pal-row">
+        <div class="pal-half light">
+          <div class="pal-swatch" style="background:#0D9488;"></div>
+          <button class="pal-btn" style="background:#0D9488;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#F0FDFA;color:#0D9488;">Tablas</div>
+          <div class="pal-badge" style="background:#F0FDFA;color:#0F766E;">Guardado</div>
+        </div>
+        <div class="pal-half dark">
+          <div class="pal-swatch" style="background:#2DD4BF;"></div>
+          <button class="pal-btn" style="background:#2DD4BF;color:#08201d;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#0f2a27;color:#5eead4;">Tablas</div>
+          <div class="pal-badge" style="background:#0f2a27;color:#5eead4;">Guardado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="steelblue" onclick="toggleSelect(this)">
+    <div class="pal-name" style="background:#12141c;color:#fff;">C · Azul acero</div>
+    <div class="pal-hex" style="background:#12141c;color:#9ca3af;">#2563EB light · #60A5FA dark — estilo GitHub/Vercel, muy neutro</div>
+    <div class="pal-card">
+      <div class="pal-row">
+        <div class="pal-half light">
+          <div class="pal-swatch" style="background:#2563EB;"></div>
+          <button class="pal-btn" style="background:#2563EB;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#EFF6FF;color:#2563EB;">Tablas</div>
+          <div class="pal-badge" style="background:#EFF6FF;color:#1D4ED8;">Guardado</div>
+        </div>
+        <div class="pal-half dark">
+          <div class="pal-swatch" style="background:#60A5FA;"></div>
+          <button class="pal-btn" style="background:#60A5FA;color:#0b1220;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#16233d;color:#93c5fd;">Tablas</div>
+          <div class="pal-badge" style="background:#16233d;color:#93c5fd;">Guardado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="violet" onclick="toggleSelect(this)">
+    <div class="pal-name" style="background:#12141c;color:#fff;">D · Violeta eléctrico</div>
+    <div class="pal-hex" style="background:#12141c;color:#9ca3af;">#7C3AED light · #A78BFA dark — más distintivo, estilo Figma</div>
+    <div class="pal-card">
+      <div class="pal-row">
+        <div class="pal-half light">
+          <div class="pal-swatch" style="background:#7C3AED;"></div>
+          <button class="pal-btn" style="background:#7C3AED;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#F5F3FF;color:#7C3AED;">Tablas</div>
+          <div class="pal-badge" style="background:#F5F3FF;color:#6D28D9;">Guardado</div>
+        </div>
+        <div class="pal-half dark">
+          <div class="pal-swatch" style="background:#A78BFA;"></div>
+          <button class="pal-btn" style="background:#A78BFA;color:#1a1033;">Nueva tabla</button>
+          <div class="pal-sidebar-item" style="background:#221a3d;color:#c4b5fd;">Tablas</div>
+          <div class="pal-badge" style="background:#221a3d;color:#c4b5fd;">Guardado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="section label">También podés mantener el pink actual tokenizado (opción "E") si al verlas al lado preferís no cambiar la identidad — decímelo en la terminal.</p>

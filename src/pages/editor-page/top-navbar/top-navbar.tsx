@@ -9,7 +9,7 @@ import { Menu } from './menu/menu';
 
 import { useAuth } from '@/context/auth-context/auth-context';
 import { IS_SUPABASE_ENABLED } from '@/lib/env';
-import { LogOut, User, ShieldAlert } from 'lucide-react';
+import { LogOut, User, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/button/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -44,31 +44,33 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
                 {/* {renderStars()} */}
                 <LanguageNav />
                 {IS_SUPABASE_ENABLED && user && (
-                    <div className="flex items-center gap-2 border-l border-slate-800 pl-2">
+                    <div className="flex items-center gap-1.5 border-l border-border pl-2.5">
                         {isAdmin && isAdmin() && (
                             <Button
                                 variant="outline"
-                                className="h-7 gap-1.5 border border-primary/25 bg-primary/5 px-2.5 text-[11px] font-semibold text-primary transition-all duration-200 hover:bg-primary/10"
+                                className="h-7 gap-1.5 rounded-md border-primary/20 bg-primary/5 px-2 text-caption font-medium text-primary shadow-none hover:bg-primary/10 hover:text-primary"
                                 onClick={() => navigate('/admin')}
                                 title="Panel de Administración"
+                                aria-label="Panel de Administración"
                             >
-                                <ShieldAlert className="size-3.5" />
+                                <ShieldCheck className="size-3.5 shrink-0" />
                                 Admin
                             </Button>
                         )}
                         <div
-                            className="flex max-w-[150px] items-center gap-1.5 truncate rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs text-muted-foreground"
+                            className="flex h-7 max-w-[160px] items-center gap-1.5 truncate rounded-md border border-border bg-muted/60 px-2 text-caption text-foreground"
                             title={user.email}
                         >
-                            <User className="size-3" />
+                            <User className="size-3.5 shrink-0 text-muted-foreground" />
                             <span className="truncate">{user.email}</span>
                         </div>
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="size-7 text-muted-foreground hover:text-white"
+                            className="size-7 rounded-md text-muted-foreground hover:bg-muted hover:text-destructive"
                             onClick={() => signOut()}
                             title="Cerrar Sesión"
+                            aria-label="Cerrar Sesión"
                         >
                             <LogOut className="size-3.5" />
                         </Button>
