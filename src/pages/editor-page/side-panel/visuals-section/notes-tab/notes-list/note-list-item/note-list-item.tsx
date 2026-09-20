@@ -100,7 +100,7 @@ export const NoteListItem = React.forwardRef<HTMLDivElement, NoteListItemProps>(
 
         return (
             <div
-                className="w-full rounded-md border border-border hover:bg-accent/5"
+                className="w-full rounded-md border border-border transition-colors duration-200 hover:bg-accent/5"
                 ref={combinedRef}
                 style={{
                     ...style,
