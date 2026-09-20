@@ -91,9 +91,10 @@ export const DashboardHeader: React.FC = () => {
                         variant="outline"
                         className="h-8 gap-1.5 border-primary/20 bg-primary/5 px-3 text-xs font-semibold text-primary transition-all duration-200 hover:border-primary/30 hover:bg-primary/10"
                         onClick={() => navigate('/admin')}
+                        title="Admin Panel"
                     >
                         <ShieldCheck className="size-4" />
-                        Admin Panel
+                        <span className="hidden sm:inline">Admin Panel</span>
                     </Button>
                 )}
 
