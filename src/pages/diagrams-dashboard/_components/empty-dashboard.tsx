@@ -29,7 +29,7 @@ export const EmptyDashboard: React.FC<EmptyDashboardProps> = ({
 
             <Button
                 onClick={onCreateNew}
-                className="mt-6 gap-2 bg-primary px-5 font-semibold text-primary-foreground shadow transition-all duration-200 hover:shadow-md active:scale-95"
+                className="mt-6 gap-2 bg-primary px-5 font-semibold text-primary-foreground shadow transition-all duration-200 hover:shadow-md"
             >
                 <Plus className="size-4" />
                 Crear tu primer diagrama

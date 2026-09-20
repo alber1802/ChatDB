@@ -140,7 +140,7 @@ export const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
                 {/* Create Diagram CTA */}
                 <Button
                     onClick={onCreateNew}
-                    className="h-10 gap-1.5 bg-primary px-4 text-sm font-semibold text-primary-foreground shadow transition-transform active:scale-95"
+                    className="h-10 gap-1.5 bg-primary px-4 text-sm font-semibold text-primary-foreground shadow"
                 >
                     <Plus className="size-4" />
                     Nuevo Diagrama

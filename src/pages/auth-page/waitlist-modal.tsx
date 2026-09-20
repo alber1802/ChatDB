@@ -241,7 +241,7 @@ export const WaitlistModal: React.FC<WaitlistModalProps> = ({
                                                 <Button
                                                     type="submit"
                                                     disabled={loading}
-                                                    className="h-10 w-full border-none bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all hover:from-indigo-500 hover:via-purple-500 hover:to-blue-500 hover:shadow-indigo-500/35 active:scale-[0.98]"
+                                                    className="h-10 w-full border-none bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all hover:from-indigo-500 hover:via-purple-500 hover:to-blue-500 hover:shadow-indigo-500/35"
                                                 >
                                                     {loading ? (
                                                         <span className="flex items-center justify-center gap-2">

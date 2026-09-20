@@ -392,7 +392,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ onLoginSuccess }) => {
                                         <Button
                                             type="submit"
                                             disabled={submitting || isLockedOut}
-                                            className="mt-2 h-10 w-full transform border-none bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all duration-300 hover:from-blue-500 hover:via-indigo-500 hover:to-emerald-500 hover:shadow-indigo-500/35 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                                            className="mt-2 h-10 w-full transform border-none bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all duration-300 hover:from-blue-500 hover:via-indigo-500 hover:to-emerald-500 hover:shadow-indigo-500/35 disabled:cursor-not-allowed disabled:opacity-60"
                                         >
                                             {submitting ? (
                                                 <span className="flex items-center justify-center gap-2">
