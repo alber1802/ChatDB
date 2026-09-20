@@ -101,9 +101,7 @@ export const AreaNodeContextMenu: React.FC<
                     onClick={autoArrangeHandler}
                     className="flex justify-between gap-3"
                 >
-                    <span>
-                        {t('canvas_context_menu.auto_arrange_area')}
-                    </span>
+                    <span>{t('canvas_context_menu.auto_arrange_area')}</span>
                     <LayoutGrid className="size-3.5" />
                 </ContextMenuItem>
                 <ContextMenuSeparator />

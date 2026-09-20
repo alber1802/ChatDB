@@ -340,9 +340,7 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                             </ReactMarkdown>
                         ) : (
                             <div className="italic text-gray-500 dark:text-gray-400">
-                                {t(
-                                    'side_panel.notes_section.note.edit_hint'
-                                )}
+                                {t('side_panel.notes_section.note.edit_hint')}
                             </div>
                         )}
                     </div>

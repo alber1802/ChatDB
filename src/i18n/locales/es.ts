@@ -349,7 +349,7 @@ export const es: LanguageTranslation = {
                 check_script_result: 'Revisa el resultado del script',
                 search_tables_placeholder: 'Buscar tablas...',
                 max_tables_warning:
-                    'Por limitaciones de rendimiento, podés importar un máximo de {{max}} tablas.',
+                    'Por limitaciones de rendimiento, puedes importar un máximo de {{max}} tablas.',
             },
 
             cancel: 'Cancelar',
