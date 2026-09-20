@@ -335,6 +335,45 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
             editModeInitialFieldCount,
         ]);
 
+        // Fields that must actually mount in the DOM. While collapsed,
+        // only the fields already shown (`visibleFields`) plus any field
+        // that is a primary key or participates in a relationship are
+        // mounted — a relationship's Handle must never disappear just
+        // because the field is past the display cap (that would
+        // reintroduce error#008, "Couldn't create edge for target handle
+        // id"). Plain fields beyond the cap are not mounted at all —
+        // previously they were mounted and only CSS-hidden via the
+        // `visible` prop, which is the DOM bloat documented for 60+
+        // table diagrams (AGENTS.md).
+        const mountedFields = useMemo(() => {
+            const fieldsToConsider =
+                editTableMode && editModeInitialFieldCount !== null
+                    ? fields.slice(0, editModeInitialFieldCount)
+                    : fields;
+
+            if (
+                expanded ||
+                fieldsToConsider.length <= TABLE_MINIMIZED_FIELDS
+            ) {
+                return fieldsToConsider;
+            }
+
+            const visibleIds = new Set(visibleFields.map((f) => f.id));
+            return fieldsToConsider.filter(
+                (field) =>
+                    visibleIds.has(field.id) ||
+                    relatedFieldIds.has(field.id) ||
+                    field.primaryKey
+            );
+        }, [
+            expanded,
+            fields,
+            visibleFields,
+            relatedFieldIds,
+            editTableMode,
+            editModeInitialFieldCount,
+        ]);
+
         const isPartOfCreatingRelationship = useMemo(
             () =>
                 tempFloatingEdge?.sourceNodeId === id ||
@@ -622,7 +661,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
                                 : `${visibleFields.length * 2}rem`, // h-8 per field
                         }}
                     >
-                        {fields.map((field: DBField) => {
+                        {mountedFields.map((field: DBField) => {
                             const isFieldVisible =
                                 expanded ||
                                 visibleFields.some((vf) => vf.id === field.id);
