@@ -72,6 +72,7 @@ export type TableNodeType = Node<
     'table'
 >;
 
+// Keep in sync with the props TableNode destructures from NodeProps / data.
 const arePropsEqual = (
     prevProps: NodeProps<TableNodeType>,
     nextProps: NodeProps<TableNodeType>
@@ -89,10 +90,7 @@ const arePropsEqual = (
         prevProps.data.highlightTable === nextProps.data.highlightTable &&
         prevProps.data.isRelationshipCreatingTarget ===
             nextProps.data.isRelationshipCreatingTarget &&
-        equal(
-            prevProps.data.targetEdgeCounts,
-            nextProps.data.targetEdgeCounts
-        )
+        equal(prevProps.data.targetEdgeCounts, nextProps.data.targetEdgeCounts)
     );
 };
 
@@ -119,6 +117,10 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
             closeAllTablesInSidebar,
         } = useLayout();
         const [expanded, setExpanded] = useState(table.expanded ?? false);
+        const hasEverExpandedRef = useRef(false);
+        if (expanded) {
+            hasEverExpandedRef.current = true;
+        }
         const { t } = useTranslation();
         const [isHovering, setIsHovering] = useState(false);
         const {
@@ -378,6 +380,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
 
             if (
                 expanded ||
+                hasEverExpandedRef.current ||
                 fieldsToConsider.length <= TABLE_MINIMIZED_FIELDS
             ) {
                 return fieldsToConsider;
