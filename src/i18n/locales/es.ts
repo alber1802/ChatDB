@@ -527,13 +527,15 @@ export const es: LanguageTranslation = {
             new_relationship: 'Nueva Relación',
             new_area: 'Nueva Área',
             new_note: 'Nueva Nota',
+            import_sql_dbml: 'Importar SQL/DBML',
+            auto_arrange_area: 'Organizar Automáticamente',
         },
 
         table_node_context_menu: {
             edit_table: 'Editar Tabla',
-            duplicate_table: 'Duplicate Table', // TODO: Translate
+            duplicate_table: 'Duplicar Tabla',
             delete_table: 'Eliminar Tabla',
-            add_relationship: 'Add Relationship', // TODO: Translate
+            add_relationship: 'Agregar Relación',
             move_to_area: 'Mover a Área',
             no_area: 'Sin Área',
         },

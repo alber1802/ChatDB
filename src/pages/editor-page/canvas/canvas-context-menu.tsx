@@ -338,7 +338,7 @@ export const CanvasContextMenu: React.FC<React.PropsWithChildren> = ({
                     onClick={importSqlDbmlHandler}
                     className="flex justify-between gap-4"
                 >
-                    Import SQL/DBML
+                    {t('canvas_context_menu.import_sql_dbml')}
                     <Import className="size-3.5" />
                 </ContextMenuItem>
                 {hasSelectedTables && (

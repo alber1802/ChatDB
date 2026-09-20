@@ -11,6 +11,7 @@ import type { Area } from '@/lib/domain/area';
 import { arrangeTablesForArea } from '@/lib/utils/area-utils';
 import { LayoutGrid, Pencil, Trash2 } from 'lucide-react';
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useReactFlow } from '@xyflow/react';
 
 export interface AreaNodeContextMenuProps {
@@ -31,6 +32,7 @@ export const AreaNodeContextMenu: React.FC<
     } = useChartDB();
     const { isMd: isDesktop } = useBreakpoint('md');
     const { getNodes } = useReactFlow();
+    const { t } = useTranslation();
 
     const removeAreaHandler = useCallback(() => {
         removeArea(area.id);
@@ -87,7 +89,11 @@ export const AreaNodeContextMenu: React.FC<
                         onClick={onEditName}
                         className="flex justify-between gap-3"
                     >
-                        <span>Edit Area Name</span>
+                        <span>
+                            {t(
+                                'side_panel.areas_section.area.area_actions.edit_name'
+                            )}
+                        </span>
                         <Pencil className="size-3.5" />
                     </ContextMenuItem>
                 ) : null}
@@ -95,7 +101,9 @@ export const AreaNodeContextMenu: React.FC<
                     onClick={autoArrangeHandler}
                     className="flex justify-between gap-3"
                 >
-                    <span>Auto Arrange</span>
+                    <span>
+                        {t('canvas_context_menu.auto_arrange_area')}
+                    </span>
                     <LayoutGrid className="size-3.5" />
                 </ContextMenuItem>
                 <ContextMenuSeparator />
@@ -103,7 +111,11 @@ export const AreaNodeContextMenu: React.FC<
                     onClick={removeAreaHandler}
                     className="flex justify-between gap-3"
                 >
-                    <span>Delete Area</span>
+                    <span>
+                        {t(
+                            'side_panel.areas_section.area.area_actions.delete_area'
+                        )}
+                    </span>
                     <Trash2 className="size-3.5 text-red-700" />
                 </ContextMenuItem>
             </ContextMenuContent>

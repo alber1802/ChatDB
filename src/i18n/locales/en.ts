@@ -514,6 +514,8 @@ export const en = {
             new_relationship: 'New Relationship',
             new_area: 'New Area',
             new_note: 'New Note',
+            import_sql_dbml: 'Import SQL/DBML',
+            auto_arrange_area: 'Auto Arrange',
         },
 
         table_node_context_menu: {
