@@ -264,6 +264,8 @@ export const es: LanguageTranslation = {
                 },
                 note: {
                     empty_note: 'Nota vacía',
+                    content_placeholder: 'Escribe tu nota aquí...',
+                    edit_hint: 'Doble clic para escribir (formato Markdown)',
                     note_actions: {
                         title: 'Acciones de Nota',
                         edit_content: 'Editar Contenido',

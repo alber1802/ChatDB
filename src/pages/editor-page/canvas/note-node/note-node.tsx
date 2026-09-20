@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useCanvas } from '@/hooks/use-canvas';
 import type { CanvasEvent } from '@/context/canvas-context/canvas-context';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -35,6 +36,7 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const { events } = useCanvas();
     const { effectiveTheme } = useTheme();
+    const { t } = useTranslation();
 
     const focused = !!selected && !dragging;
 
@@ -188,7 +190,9 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                             }
                         }}
                         autoFocus
-                        placeholder="Type your note here..."
+                        placeholder={t(
+                            'side_panel.notes_section.note.content_placeholder'
+                        )}
                     />
                 ) : (
                     <div className="h-full overflow-auto break-words text-sm leading-relaxed text-gray-700 dark:text-gray-300">
@@ -336,7 +340,9 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                             </ReactMarkdown>
                         ) : (
                             <div className="italic text-gray-500 dark:text-gray-400">
-                                Double-click to write (Markdown format)
+                                {t(
+                                    'side_panel.notes_section.note.edit_hint'
+                                )}
                             </div>
                         )}
                     </div>
@@ -350,6 +356,9 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                             size="sm"
                             className="size-7 p-0"
                             onClick={enterEditMode}
+                            aria-label={t(
+                                'side_panel.notes_section.note.note_actions.edit_content'
+                            )}
                         >
                             <Pencil className="size-3.5" />
                         </Button>
@@ -362,6 +371,9 @@ export const NoteNode: React.FC<NoteNodeProps> = ({
                             size="sm"
                             className="size-7 p-0 text-red-500 hover:text-red-700"
                             onClick={handleDelete}
+                            aria-label={t(
+                                'side_panel.notes_section.note.note_actions.delete_note'
+                            )}
                         >
                             <Trash2 className="size-3.5" />
                         </Button>

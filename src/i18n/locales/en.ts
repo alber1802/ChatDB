@@ -258,6 +258,8 @@ export const en = {
                 },
                 note: {
                     empty_note: 'Empty note',
+                    content_placeholder: 'Type your note here...',
+                    edit_hint: 'Double-click to write (Markdown format)',
                     note_actions: {
                         title: 'Note Actions',
                         edit_content: 'Edit Content',
