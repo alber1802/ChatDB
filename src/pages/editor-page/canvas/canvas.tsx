@@ -1776,6 +1776,7 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                         showFitView={false}
                         showInteractive={false}
                         className="!shadow-none"
+                        style={{ top: isDesktop ? undefined : '64px' }}
                     >
                         <div className="flex flex-col items-center gap-2 md:flex-row">
                             {!readonly ? (
