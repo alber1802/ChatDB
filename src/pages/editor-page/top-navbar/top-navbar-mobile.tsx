@@ -40,7 +40,6 @@ export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <LastSaved />
                         <LanguageNav />
                         {IS_SUPABASE_ENABLED && user && (
                             <Button
@@ -58,8 +57,14 @@ export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
                 <Menu />
             </div>
 
-            <div className="flex flex-1 justify-center pb-2 pt-1">
-                <DiagramName />
+            <div className="flex flex-1 items-center justify-between gap-2 pb-2 pt-1">
+                <div className="min-w-0 flex-1" />
+                <div className="min-w-0 shrink">
+                    <DiagramName />
+                </div>
+                <div className="flex min-w-0 flex-1 justify-end">
+                    <LastSaved />
+                </div>
             </div>
         </nav>
     );

@@ -84,14 +84,15 @@ export const DashboardHeader: React.FC = () => {
                 </Badge>
             </div>
 
-            <div className="flex items-center gap-x-3">
+            <div className="flex items-center gap-x-2 sm:gap-x-3">
                 {/* Admin Quick Action */}
                 {isAdmin && isAdmin() && (
                     <Button
                         variant="outline"
-                        className="h-8 gap-1.5 border-primary/20 bg-primary/5 px-3 text-xs font-semibold text-primary transition-all duration-200 hover:border-primary/30 hover:bg-primary/10"
+                        className="h-8 gap-1.5 border-primary/20 bg-primary/5 px-2 sm:px-3 text-xs font-semibold text-primary transition-all duration-200 hover:border-primary/30 hover:bg-primary/10"
                         onClick={() => navigate('/admin')}
                         title="Admin Panel"
+                        aria-label="Admin Panel"
                     >
                         <ShieldCheck className="size-4" />
                         <span className="hidden sm:inline">Admin Panel</span>

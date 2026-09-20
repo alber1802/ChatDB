@@ -89,7 +89,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ readonly }) => {
 
     return (
         <div className="px-1">
-            <Card className="h-[44px] max-w-[calc(100vw-2rem)] overflow-x-auto bg-secondary p-0 shadow-none">
+            <Card className="h-[44px] max-md:max-w-[calc(100vw-2rem)] max-md:overflow-x-auto bg-secondary p-0 shadow-none">
                 <CardContent className="flex h-full flex-row items-center p-1">
                     <Tooltip>
                         <TooltipTrigger asChild>
