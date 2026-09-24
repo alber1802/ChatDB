@@ -12,6 +12,7 @@ import type { DBCustomType } from './db-custom-type';
 import { dbCustomTypeSchema } from './db-custom-type';
 import type { Note } from './note';
 import { noteSchema } from './note';
+import type { DiagramAccessRole, DiagramOwner } from './diagram-access';
 
 export interface Diagram {
     id: string;
@@ -20,6 +21,9 @@ export interface Diagram {
     databaseType: DatabaseType;
     databaseEdition?: DatabaseEdition;
     version?: number;
+    /** Rol del usuario actual; lo calcula el backend. */
+    accessRole?: DiagramAccessRole;
+    owner?: DiagramOwner;
     tables?: DBTable[];
     relationships?: DBRelationship[];
     dependencies?: DBDependency[];

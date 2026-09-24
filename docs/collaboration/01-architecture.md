@@ -62,10 +62,20 @@ siguiendo el patrón de migraciones sueltas):
    - DELETE: `owner_id = auth.uid() OR shared_with = auth.uid()` (revocar o abandonar).
 2. `can_edit_diagram` sigue igual (solo `editor`); `can_view_diagram` ya incluye
    cualquier fila. Añadir `SET search_path = public` a ambas (hardening).
-3. Nueva función `get_diagram_role(p_diagram_id text) RETURNS text`
-   (`'owner' | 'editor' | 'viewer' | NULL`), STABLE SECURITY DEFINER, usada por
-   la API y el servidor WebSocket.
-4. `diagram_invitations` se define en Fase 2; `diagram_ops` en Fase 3.
+3. ~~Nueva función `get_diagram_role()`~~ — **implementado distinto:** el rol se
+   calcula con la expresión `ACCESS_ROLE_SQL` (`server/src/modules/diagrams/diagrams.service.ts`)
+   dentro de las consultas de la API. Así el backend no depende de que la
+   migración esté aplicada antes del deploy. El servidor WebSocket (Fase 3)
+   reutilizará la misma expresión.
+4. **Hueco de seguridad corregido:** la política INSERT anterior de
+   `diagram_shares` solo exigía `auth.uid() = owner_id`, sin comprobar que el
+   diagrama fuese del llamante: cualquiera que conociera un `diagram_id` podía
+   darse acceso de editor. La migración elimina INSERT directo, restringe
+   UPDATE a las columnas `(role, updated_at)` y exige ser dueño del diagrama.
+   Además `diagramsService.create` (upsert) ya no reescribe `user_id` ni
+   `created_at`, para que un editor no pueda apropiarse de un diagrama con
+   `POST /diagrams`.
+5. `diagram_invitations` se define en Fase 2; `diagram_ops` en Fase 3.
 
 ## Reglas de autorización
 

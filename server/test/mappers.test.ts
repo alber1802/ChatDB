@@ -27,6 +27,38 @@ describe('mappers', () => {
         expect(row.user_id).toBe('11111111-1111-1111-1111-111111111111');
     });
 
+    it('maps the caller access role and the owner profile of a diagram', () => {
+        const back = rowToDiagram({
+            id: 'd1',
+            name: 'Demo',
+            database_type: 'postgresql',
+            created_at: '2026-01-01T00:00:00.000Z',
+            updated_at: '2026-01-02T00:00:00.000Z',
+            user_id: '11111111-1111-1111-1111-111111111111',
+            access_role: 'viewer',
+            owner_display_name: 'Ana',
+            owner_avatar_url: null,
+        });
+        expect(back.accessRole).toBe('viewer');
+        expect(back.owner).toEqual({
+            id: '11111111-1111-1111-1111-111111111111',
+            displayName: 'Ana',
+            avatarUrl: null,
+        });
+    });
+
+    it('omits accessRole/owner when the row does not carry them', () => {
+        const back = rowToDiagram({
+            id: 'd1',
+            name: 'Demo',
+            database_type: 'postgresql',
+            created_at: '2026-01-01T00:00:00.000Z',
+            updated_at: '2026-01-02T00:00:00.000Z',
+        });
+        expect(back.accessRole).toBeUndefined();
+        expect(back.owner).toBeUndefined();
+    });
+
     it('maps table comments field', () => {
         const table = {
             id: 't1',

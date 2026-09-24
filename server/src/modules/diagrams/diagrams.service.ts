@@ -105,16 +105,33 @@ async function hydrate(
     return diagram;
 }
 
+/**
+ * Rol del usuario actual (auth.uid(), fijado por withUserContext) sobre la
+ * fila `d` de diagrams: 'owner' | 'editor' | 'viewer', o NULL sin acceso.
+ * El propietario es implícito (diagrams.user_id), no una fila de shares.
+ */
+export const ACCESS_ROLE_SQL = `CASE WHEN d.user_id = auth.uid() THEN 'owner'
+    ELSE (SELECT ds.role FROM diagram_shares ds
+          WHERE ds.diagram_id = d.id AND ds.shared_with = auth.uid())
+    END`;
+
+const DIAGRAM_SELECT = `SELECT d.*, ${ACCESS_ROLE_SQL} AS access_role,
+        up.display_name AS owner_display_name,
+        up.avatar_url AS owner_avatar_url
+    FROM diagrams d
+    LEFT JOIN user_profiles up ON up.user_id = d.user_id`;
+
 function upsertSql(
     table: string,
     row: Record<string, unknown>,
-    conflict: string
+    conflict: string,
+    immutable: string[] = []
 ) {
     const keys = Object.keys(row);
     const cols = keys.map((k) => `"${k}"`).join(', ');
     const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
     const updates = keys
-        .filter((k) => k !== conflict && k !== 'id')
+        .filter((k) => k !== conflict && k !== 'id' && !immutable.includes(k))
         .map((k) => `"${k}" = EXCLUDED."${k}"`)
         .join(', ');
     return {
@@ -134,7 +151,7 @@ export const diagramsService = {
 
     async list(client: PoolClient, options?: IncludeOptions) {
         const { rows } = await client.query(
-            `SELECT * FROM diagrams ORDER BY created_at DESC`
+            `${DIAGRAM_SELECT} ORDER BY d.created_at DESC`
         );
         const diagrams = rows.map((r) => rowToDiagram(r));
         return Promise.all(diagrams.map((d) => hydrate(client, d, options)));
@@ -142,7 +159,7 @@ export const diagramsService = {
 
     async get(client: PoolClient, id: string, options?: IncludeOptions) {
         const { rows } = await client.query(
-            `SELECT * FROM diagrams WHERE id = $1`,
+            `${DIAGRAM_SELECT} WHERE d.id = $1`,
             [id]
         );
         if (!rows[0]) return undefined;
@@ -151,7 +168,9 @@ export const diagramsService = {
 
     async create(client: PoolClient, diagram: DiagramDto, userId: string) {
         const row = diagramToRow(diagram, userId);
-        const q = upsertSql('diagrams', row, 'id');
+        // Un upsert sobre un diagrama existente (p.ej. un editor compartido
+        // re-subiendo el diagrama) nunca puede cambiar de propietario.
+        const q = upsertSql('diagrams', row, 'id', ['user_id', 'created_at']);
         await client.query(q.text, q.values);
 
         const children: Array<Promise<unknown>> = [];

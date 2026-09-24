@@ -27,9 +27,16 @@ import {
     Edit,
     Copy,
     ExternalLink,
+    LogOut,
+    Users,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Diagram } from '@/lib/domain/diagram';
+import {
+    accessRoleLabel,
+    canEditDiagram,
+    canManageDiagram,
+} from '@/lib/domain/diagram-access';
 
 interface DiagramListItemProps {
     diagram: Diagram;
@@ -62,6 +69,12 @@ export const DiagramListItem: React.FC<DiagramListItemProps> = ({
     );
 
     const tablesCount = diagram.tables?.length || 0;
+    const isOwner = canManageDiagram(diagram);
+    const canEdit = canEditDiagram(diagram);
+    const sharedRole =
+        diagram.accessRole && diagram.accessRole !== 'owner'
+            ? diagram.accessRole
+            : undefined;
 
     return (
         <>
@@ -88,6 +101,19 @@ export const DiagramListItem: React.FC<DiagramListItemProps> = ({
                             <span className="rounded bg-muted/65 px-1.5 py-0.5 font-mono text-[9px] font-medium uppercase text-muted-foreground">
                                 {diagram.databaseType}
                             </span>
+                            {sharedRole && (
+                                <span
+                                    className="ml-1 inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                                    title={
+                                        diagram.owner?.displayName
+                                            ? `Compartido por ${diagram.owner.displayName}`
+                                            : 'Compartido contigo'
+                                    }
+                                >
+                                    <Users className="size-3" aria-hidden />
+                                    {accessRoleLabel(sharedRole)}
+                                </span>
+                            )}
                         </div>
                         <p
                             className="mt-0.5 max-w-lg truncate text-xs text-muted-foreground"
@@ -137,13 +163,15 @@ export const DiagramListItem: React.FC<DiagramListItemProps> = ({
                                     <ExternalLink className="size-3.5 text-muted-foreground" />
                                     Abrir Editor
                                 </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setIsRenameOpen(true)}
-                                    className="cursor-pointer gap-2"
-                                >
-                                    <Edit className="size-3.5 text-muted-foreground" />
-                                    Renombrar
-                                </DropdownMenuItem>
+                                {canEdit && (
+                                    <DropdownMenuItem
+                                        onClick={() => setIsRenameOpen(true)}
+                                        className="cursor-pointer gap-2"
+                                    >
+                                        <Edit className="size-3.5 text-muted-foreground" />
+                                        Renombrar
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                     onClick={() => onDuplicate(diagram)}
                                     className="cursor-pointer gap-2"
@@ -156,8 +184,12 @@ export const DiagramListItem: React.FC<DiagramListItemProps> = ({
                                     onClick={() => setIsDeleteOpen(true)}
                                     className="cursor-pointer gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive"
                                 >
-                                    <Trash2 className="size-3.5" />
-                                    Eliminar
+                                    {isOwner ? (
+                                        <Trash2 className="size-3.5" />
+                                    ) : (
+                                        <LogOut className="size-3.5" />
+                                    )}
+                                    {isOwner ? 'Eliminar' : 'Abandonar'}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -178,13 +210,14 @@ export const DiagramListItem: React.FC<DiagramListItemProps> = ({
                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            ¿Estás seguro de eliminar este diagrama?
+                            {isOwner
+                                ? '¿Estás seguro de eliminar este diagrama?'
+                                : '¿Abandonar este diagrama compartido?'}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción eliminará de forma permanente el
-                            diagrama "{diagram.name}" y todos sus objetos
-                            relacionados (tablas, relaciones y notas). No se
-                            puede deshacer.
+                            {isOwner
+                                ? `Esta acción eliminará de forma permanente el diagrama "${diagram.name}" y todos sus objetos relacionados (tablas, relaciones y notas). No se puede deshacer.`
+                                : `Dejarás de tener acceso a "${diagram.name}". El diagrama no se borra; su propietario tendría que volver a invitarte.`}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -200,7 +233,7 @@ export const DiagramListItem: React.FC<DiagramListItemProps> = ({
                             }}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            Eliminar
+                            {isOwner ? 'Eliminar' : 'Abandonar'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '@/lib/api-client';
+import { canManageDiagram } from '@/lib/domain/diagram-access';
 import { useStorage } from '@/hooks/use-storage';
 import { cloneDiagram } from '@/lib/clone';
 import type { Diagram } from '@/lib/domain/diagram';
@@ -37,13 +39,22 @@ export const useDashboard = () => {
     const handleDelete = useCallback(
         async (id: string) => {
             try {
-                await deleteDiagram(id);
+                // Borrar solo lo puede el propietario; para un diagrama
+                // compartido la misma acción significa abandonarlo.
+                const diagram = diagrams.find((d) => d.id === id);
+                if (!diagram || canManageDiagram(diagram)) {
+                    await deleteDiagram(id);
+                } else {
+                    await apiFetch(`/diagrams/${id}/shares/me`, {
+                        method: 'DELETE',
+                    });
+                }
                 await fetchDiagrams();
             } catch (err) {
                 console.error('Error deleting diagram:', err);
             }
         },
-        [deleteDiagram, fetchDiagrams]
+        [deleteDiagram, fetchDiagrams, diagrams]
     );
 
     const handleRename = useCallback(

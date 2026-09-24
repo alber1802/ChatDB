@@ -34,6 +34,8 @@ import {
     type DBCustomType,
 } from '@/lib/domain/db-custom-type';
 import { getDefaultPrimaryKeyType } from '@/lib/data/data-types/data-types';
+import type { DiagramAccessRole } from '@/lib/domain/diagram-access';
+import { resolveReadonly } from '@/lib/domain/diagram-access';
 
 export interface ChartDBProviderProps {
     diagram?: Diagram;
@@ -71,6 +73,9 @@ export const ChartDBProvider: React.FC<
         diagram?.customTypes ?? []
     );
     const [notes, setNotes] = useState<Note[]>(diagram?.notes ?? []);
+    const [accessRole, setAccessRole] = useState<DiagramAccessRole | undefined>(
+        diagram?.accessRole
+    );
 
     const { events: diffEvents } = useDiff();
 
@@ -102,9 +107,16 @@ export const ChartDBProvider: React.FC<
         [databaseType]
     );
 
+    // Un viewer abre el diagrama en solo lectura: `readonly` además cambia
+    // `db` por un stub sin escrituras (ver más abajo).
     const readonly = useMemo(
-        () => readonlyProp ?? hasDiff ?? false,
-        [readonlyProp, hasDiff]
+        () =>
+            resolveReadonly({
+                readonlyProp,
+                hasDiff: hasDiff ?? false,
+                accessRole,
+            }),
+        [readonlyProp, hasDiff, accessRole]
     );
 
     const schemas = useMemo(
@@ -1907,6 +1919,7 @@ export const ChartDBProvider: React.FC<
                 setDiagramUpdatedAt(diagram.updatedAt);
                 setHighlightedCustomTypeId(undefined);
                 setNotes(diagram.notes ?? []);
+                setAccessRole(diagram.accessRole);
 
                 events.emit({ action: 'load_diagram', data: { diagram } });
 

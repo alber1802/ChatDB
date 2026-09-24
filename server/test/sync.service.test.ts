@@ -96,6 +96,9 @@ describe('applyOperation — diagram patches', () => {
     it('a batch whose only operation is an empty diagram patch still commits', async () => {
         const client = {
             query: vi.fn(async (sql: string) => {
+                if (sql.includes('AS access_role')) {
+                    return { rows: [{ access_role: 'owner' }] };
+                }
                 if (sql.includes('SELECT version')) {
                     return {
                         rows: [{ version: 1, last_sync_session_id: null }],
@@ -132,6 +135,9 @@ describe('syncService.apply — conflict detection is per-session, not just per-
     ) =>
         ({
             query: vi.fn(async (sql: string) => {
+                if (sql.includes('AS access_role')) {
+                    return { rows: [{ access_role: 'owner' }] };
+                }
                 if (sql.includes('SELECT version')) {
                     return {
                         rows: [
@@ -207,5 +213,60 @@ describe('syncService.apply — conflict detection is per-session, not just per-
             String(call[0]).includes('UPDATE diagrams')
         );
         expect(updateCall?.[1]).toEqual([2, 'session-A', 'd1']);
+    });
+});
+
+// Fase 1 de colaboración: un `viewer` puede leer el diagrama pero no escribir.
+// RLS ya lo bloquearía fila a fila, pero `SELECT … FOR UPDATE` sobre
+// `diagrams` filtra la fila para quien no puede actualizarla y el cliente
+// recibiría un 404 engañoso ("diagrama no encontrado"). El servicio debe
+// cortar antes, con un 403 explícito y sin aplicar ninguna operación.
+describe('syncService.apply — access role', () => {
+    const clientWithRole = (role: string | null) => {
+        const query = vi.fn(async (sql: string) => {
+            if (sql.includes('AS access_role')) {
+                return { rows: role === null ? [] : [{ access_role: role }] };
+            }
+            if (sql.includes('SELECT version')) {
+                return { rows: [{ version: 1, last_sync_session_id: null }] };
+            }
+            return { rows: [] };
+        });
+        return { client: { query } as unknown as PoolClient, query };
+    };
+    const request = {
+        baseVersion: 1,
+        sessionId: 's1',
+        operations: [
+            {
+                entity: 'table' as const,
+                op: 'update' as const,
+                id: 't1',
+                patch: { x: 1 },
+            },
+        ],
+    };
+
+    it('rejects a viewer with 403 forbidden_role before applying anything', async () => {
+        const { client, query } = clientWithRole('viewer');
+        await expect(
+            syncService.apply(client, 'd1', 'u1', request)
+        ).rejects.toMatchObject({ statusCode: 403, code: 'forbidden_role' });
+        const sqls = query.mock.calls.map((c) => String(c[0]));
+        expect(sqls.some((q) => q.includes('UPDATE'))).toBe(false);
+    });
+
+    it('returns 404 when the caller has no access at all', async () => {
+        const { client } = clientWithRole(null);
+        await expect(
+            syncService.apply(client, 'd1', 'u1', request)
+        ).rejects.toMatchObject({ statusCode: 404, code: 'not_found' });
+    });
+
+    it('lets an editor write', async () => {
+        const { client } = clientWithRole('editor');
+        await expect(
+            syncService.apply(client, 'd1', 'u1', request)
+        ).resolves.toMatchObject({ version: 2 });
     });
 });

@@ -15,7 +15,10 @@ import {
     tablePatchSchema,
     tableSchema,
 } from '../../lib/schemas.js';
-import { diagramsService } from '../diagrams/diagrams.service.js';
+import {
+    ACCESS_ROLE_SQL,
+    diagramsService,
+} from '../diagrams/diagrams.service.js';
 import type {
     AreaDto,
     CustomTypeDto,
@@ -267,6 +270,26 @@ export const syncService = {
         userId: string,
         request: SyncRequest
     ): Promise<SyncResult> {
+        // Se consulta el rol ANTES del `FOR UPDATE`: RLS oculta la fila de
+        // `diagrams` a quien no puede actualizarla, así que un viewer
+        // recibiría un 404 engañoso en vez de un 403.
+        const { rows: roleRows } = await client.query(
+            `SELECT ${ACCESS_ROLE_SQL} AS access_role FROM diagrams d WHERE d.id = $1`,
+            [diagramId]
+        );
+        const accessRole = roleRows[0]?.access_role as
+            string | null | undefined;
+        if (!accessRole) {
+            throw new AppError(404, 'Diagram not found', 'not_found');
+        }
+        if (accessRole === 'viewer') {
+            throw new AppError(
+                403,
+                'Read-only access to this diagram',
+                'forbidden_role'
+            );
+        }
+
         const { rows } = await client.query(
             `SELECT version, last_sync_session_id FROM diagrams WHERE id = $1 FOR UPDATE`,
             [diagramId]

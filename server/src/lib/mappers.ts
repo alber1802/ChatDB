@@ -3,6 +3,14 @@
  * Port of src/lib/supabase-mappers.ts
  */
 
+export type DiagramAccessRole = 'owner' | 'editor' | 'viewer';
+
+export interface DiagramOwnerDto {
+    id: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+}
+
 export interface DiagramDto {
     id: string;
     name: string;
@@ -11,6 +19,8 @@ export interface DiagramDto {
     version: number;
     createdAt: string;
     updatedAt: string;
+    accessRole?: DiagramAccessRole;
+    owner?: DiagramOwnerDto;
     tables?: TableDto[];
     relationships?: RelationshipDto[];
     dependencies?: DependencyDto[];
@@ -108,6 +118,18 @@ export function rowToDiagram(row: Record<string, unknown>): DiagramDto {
         version: row.version != null ? Number(row.version) : 1,
         createdAt: new Date(String(row.created_at)).toISOString(),
         updatedAt: new Date(String(row.updated_at)).toISOString(),
+        ...(row.access_role
+            ? { accessRole: row.access_role as DiagramAccessRole }
+            : {}),
+        ...('owner_display_name' in row
+            ? {
+                  owner: {
+                      id: String(row.user_id),
+                      displayName: (row.owner_display_name as string) ?? null,
+                      avatarUrl: (row.owner_avatar_url as string) ?? null,
+                  },
+              }
+            : {}),
     };
 }
 

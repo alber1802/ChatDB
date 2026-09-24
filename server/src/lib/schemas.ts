@@ -163,9 +163,8 @@ export const configSchema = z.object({
     defaultDiagramId: z.string().optional().nullable(),
 });
 
-export const shareSchema = z.object({
-    sharedWith: z.string().uuid(),
-    role: z.literal('editor').default('editor'),
+export const shareRolePatchSchema = z.object({
+    role: z.enum(['editor', 'viewer']),
 });
 
 export const loginSchema = z.object({
