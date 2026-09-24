@@ -24,6 +24,30 @@ export const globalRateLimit: RequestHandler = rateLimit({
     message: { error: 'rate_limited', message: 'Too many requests' },
 });
 
+// Límites por usuario autenticado (requieren `authenticate` antes).
+const byUser = (req: Parameters<RequestHandler>[0]) =>
+    req.user?.id ?? req.ip ?? 'anonymous';
+
+export const shareSearchRateLimit: RequestHandler = rateLimit({
+    windowMs: 60_000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: byUser,
+    store: buildStore('rl:share-search:'),
+    message: { error: 'rate_limited', message: 'Too many searches' },
+});
+
+export const invitationCreateRateLimit: RequestHandler = rateLimit({
+    windowMs: 60 * 60_000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: byUser,
+    store: buildStore('rl:invite:'),
+    message: { error: 'rate_limited', message: 'Too many invitations' },
+});
+
 export const loginRateLimit: RequestHandler = rateLimit({
     windowMs: 60_000,
     max: 20,

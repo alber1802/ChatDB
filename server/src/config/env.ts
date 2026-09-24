@@ -15,6 +15,16 @@ const envSchema = z.object({
     SUPABASE_URL: z.string().url(),
     SUPABASE_ANON_KEY: z.string().min(1),
     REDIS_URL: z.string().optional().default(''),
+    // Invitaciones (Fase 2 de colaboración). Sin RESEND_API_KEY/MAIL_FROM no
+    // se envían correos y el owner copia el enlace desde el modal.
+    RESEND_API_KEY: z.string().optional().default(''),
+    MAIL_FROM: z.string().optional().default(''),
+    // URL pública del frontend para construir los enlaces /invite/:token.
+    // Por defecto, el primer origen de CORS_ORIGIN.
+    APP_URL: z.preprocess(
+        (v) => (v === '' ? undefined : v),
+        z.string().url().optional()
+    ),
     LOGIN_ATTEMPTS_BEFORE_COOLDOWN: z.coerce
         .number()
         .int()

@@ -167,6 +167,15 @@ export const shareRolePatchSchema = z.object({
     role: z.enum(['editor', 'viewer']),
 });
 
+export const invitationCreateSchema = z.object({
+    email: z.string().trim().toLowerCase().email().max(320),
+    role: z.enum(['editor', 'viewer']),
+});
+
+export const shareCandidatesQuerySchema = z.object({
+    q: z.string().trim().min(3).max(100),
+});
+
 export const loginSchema = z.object({
     email: z.string().email(),
     password: z.string().min(1),

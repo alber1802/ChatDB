@@ -17,6 +17,7 @@ import { notesRouter } from './modules/notes/notes.routes.js';
 import { configRouter } from './modules/config/config.routes.js';
 import { filtersRouter } from './modules/filters/filters.routes.js';
 import { sharesRouter } from './modules/shares/shares.routes.js';
+import { invitationsRouter } from './modules/invitations/invitations.routes.js';
 import { adminUsersRouter } from './modules/admin/users.routes.js';
 import { waitlistRouter } from './modules/admin/waitlist.routes.js';
 import { auditRouter } from './modules/admin/audit.routes.js';
@@ -76,6 +77,7 @@ export function createApp() {
     app.use(configRouter);
     app.use(filtersRouter);
     app.use(sharesRouter);
+    app.use(invitationsRouter);
 
     app.use('/admin', adminUsersRouter);
     app.use('/admin', auditRouter);
