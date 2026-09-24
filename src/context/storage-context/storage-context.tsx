@@ -61,6 +61,15 @@ export interface StorageContext {
         attributes: Partial<DBTable>;
     }) => Promise<void>;
     putTable: (params: { diagramId: string; table: DBTable }) => Promise<void>;
+    /**
+     * Guarda la diferencia entre dos versiones de una tabla como ops mínimas
+     * (columnas/índices/CHECK por elemento). Ver table-diff.ts.
+     */
+    applyTableChanges: (params: {
+        diagramId: string;
+        prev: DBTable;
+        next: DBTable;
+    }) => Promise<void>;
     deleteTable: (params: { diagramId: string; id: string }) => Promise<void>;
     listTables: (diagramId: string) => Promise<DBTable[]>;
     deleteDiagramTables: (diagramId: string) => Promise<void>;
@@ -172,6 +181,7 @@ export const storageInitialValue: StorageContext = {
     getTable: emptyFn,
     updateTable: emptyFn,
     putTable: emptyFn,
+    applyTableChanges: emptyFn,
     deleteTable: emptyFn,
     listTables: emptyFn,
     deleteDiagramTables: emptyFn,

@@ -708,9 +708,10 @@ export const ChartDBProvider: React.FC<
             setDiagramUpdatedAt(updatedAt);
             await Promise.all([
                 db.updateDiagram({ id: diagramId, attributes: { updatedAt } }),
-                db.updateTable({
-                    id: tableId,
-                    attributes: {
+                db.applyTableChanges({
+                    diagramId,
+                    prev: currentTable,
+                    next: {
                         ...updateTableFn(currentTable),
                     },
                 }),
@@ -789,9 +790,10 @@ export const ChartDBProvider: React.FC<
             setDiagramUpdatedAt(updatedAt);
             await Promise.all([
                 db.updateDiagram({ id: diagramId, attributes: { updatedAt } }),
-                db.updateTable({
-                    id: tableId,
-                    attributes: {
+                db.applyTableChanges({
+                    diagramId,
+                    prev: currentTable,
+                    next: {
                         ...updateTableFn(currentTable),
                     },
                 }),
@@ -824,24 +826,27 @@ export const ChartDBProvider: React.FC<
             field: DBField,
             options = { updateHistory: true }
         ) => {
-            const fields = getTable(tableId)?.fields ?? [];
-            setTables((tables) => {
-                return tables.map((table) => {
-                    if (table.id === tableId) {
-                        db.updateTable({
-                            id: tableId,
-                            attributes: {
-                                ...table,
-                                fields: [...table.fields, field],
-                            },
-                        });
-
-                        return { ...table, fields: [...table.fields, field] };
-                    }
-
-                    return table;
+            const currentTable = getTable(tableId);
+            const fields = currentTable?.fields ?? [];
+            setTables((tables) =>
+                tables.map((table) =>
+                    table.id === tableId
+                        ? { ...table, fields: [...table.fields, field] }
+                        : table
+                )
+            );
+            // Fuera del updater de setTables: un efecto secundario dentro de él
+            // se ejecuta dos veces en StrictMode.
+            if (currentTable) {
+                void db.applyTableChanges({
+                    diagramId,
+                    prev: currentTable,
+                    next: {
+                        ...currentTable,
+                        fields: [...currentTable.fields, field],
+                    },
                 });
-            });
+            }
 
             events.emit({
                 action: 'add_field',
@@ -930,9 +935,10 @@ export const ChartDBProvider: React.FC<
             setDiagramUpdatedAt(updatedAt);
             await Promise.all([
                 db.updateDiagram({ id: diagramId, attributes: { updatedAt } }),
-                db.updateTable({
-                    id: tableId,
-                    attributes: {
+                db.applyTableChanges({
+                    diagramId,
+                    prev: currentTable,
+                    next: {
                         ...currentTable,
                         indexes: [...currentTable.indexes, index],
                     },
@@ -980,9 +986,10 @@ export const ChartDBProvider: React.FC<
             setDiagramUpdatedAt(updatedAt);
             await Promise.all([
                 db.updateDiagram({ id: diagramId, attributes: { updatedAt } }),
-                db.updateTable({
-                    id: tableId,
-                    attributes: {
+                db.applyTableChanges({
+                    diagramId,
+                    prev: currentTable,
+                    next: {
                         ...currentTable,
                         indexes: currentTable.indexes.filter(
                             (i) => i.id !== indexId
@@ -1059,9 +1066,10 @@ export const ChartDBProvider: React.FC<
             setDiagramUpdatedAt(updatedAt);
             await Promise.all([
                 db.updateDiagram({ id: diagramId, attributes: { updatedAt } }),
-                db.updateTable({
-                    id: tableId,
-                    attributes: {
+                db.applyTableChanges({
+                    diagramId,
+                    prev: currentTable,
+                    next: {
                         ...currentTable,
                         indexes: currentTable.indexes.map((i) =>
                             i.id === indexId ? { ...i, ...index } : i
@@ -1123,9 +1131,10 @@ export const ChartDBProvider: React.FC<
                         id: diagramId,
                         attributes: { updatedAt },
                     }),
-                    db.updateTable({
-                        id: tableId,
-                        attributes: {
+                    db.applyTableChanges({
+                        diagramId,
+                        prev: currentTable,
+                        next: {
                             ...currentTable,
                             checkConstraints: [
                                 ...(currentTable.checkConstraints ?? []),
@@ -1199,9 +1208,10 @@ export const ChartDBProvider: React.FC<
                         id: diagramId,
                         attributes: { updatedAt },
                     }),
-                    db.updateTable({
-                        id: tableId,
-                        attributes: {
+                    db.applyTableChanges({
+                        diagramId,
+                        prev: currentTable,
+                        next: {
                             ...currentTable,
                             checkConstraints: (
                                 currentTable.checkConstraints ?? []
@@ -1263,9 +1273,10 @@ export const ChartDBProvider: React.FC<
                         id: diagramId,
                         attributes: { updatedAt },
                     }),
-                    db.updateTable({
-                        id: tableId,
-                        attributes: {
+                    db.applyTableChanges({
+                        diagramId,
+                        prev: currentTable,
+                        next: {
                             ...currentTable,
                             checkConstraints: (
                                 currentTable.checkConstraints ?? []

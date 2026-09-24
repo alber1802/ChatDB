@@ -8,6 +8,8 @@ export default defineConfig({
         globals: true,
         environment: 'happy-dom',
         setupFiles: './src/test/setup.ts',
+        // El backend tiene su propia configuración y entorno (cd server && pnpm test).
+        exclude: ['**/node_modules/**', '**/dist/**', 'server/**'],
         coverage: {
             reporter: ['text', 'json', 'html'],
             exclude: ['node_modules/', 'src/test/setup.ts'],

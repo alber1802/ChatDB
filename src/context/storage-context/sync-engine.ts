@@ -3,6 +3,10 @@ import { ApiError, apiFetch } from '@/lib/api-client';
 export type SyncEntity =
     | 'diagram'
     | 'table'
+    // Elementos de los arrays de una tabla (Fase 4-a, ver table-diff.ts)
+    | 'field'
+    | 'index'
+    | 'checkConstraint'
     | 'relationship'
     | 'dependency'
     | 'area'
@@ -15,8 +19,23 @@ export interface SyncOperation {
     entity: SyncEntity;
     op: SyncOp;
     id: string;
+    /** tableId para field/index/checkConstraint. */
+    parentId?: string;
+    /** Solo en create de sub-entidad: insertar tras este id (null = al principio). */
+    afterId?: string | null;
     patch?: Record<string, unknown>;
 }
+
+interface Batch {
+    /** Estable entre reintentos: el servidor no reaplica un batchId ya visto. */
+    batchId: string;
+    operations: SyncOperation[];
+}
+
+const opKey = (op: SyncOperation) =>
+    op.parentId
+        ? `${op.entity}:${op.parentId}:${op.id}`
+        : `${op.entity}:${op.id}`;
 
 export type SyncStatus = 'idle' | 'saving' | 'saved' | 'error' | 'offline';
 
@@ -63,24 +82,33 @@ export function collapseOperations(
 ): SyncOperation[] {
     const byKey = new Map<string, SyncOperation>();
     for (const op of operations) {
-        const key = `${op.entity}:${op.id}`;
+        const key = opKey(op);
         const prev = byKey.get(key);
         if (!prev) {
             byKey.set(key, op);
             continue;
         }
+        const base = {
+            entity: op.entity,
+            id: op.id,
+            ...(op.parentId ? { parentId: op.parentId } : {}),
+        };
         if (op.op === 'delete') {
-            byKey.set(key, { entity: op.entity, op: 'delete', id: op.id });
+            byKey.set(key, { ...base, op: 'delete' });
             continue;
         }
         if (prev.op === 'delete') {
             byKey.set(key, op);
             continue;
         }
+        const afterId =
+            prev.op === 'create' && prev.afterId !== undefined
+                ? { afterId: prev.afterId }
+                : {};
         byKey.set(key, {
-            entity: op.entity,
+            ...base,
             op: prev.op === 'create' ? 'create' : 'update',
-            id: op.id,
+            ...afterId,
             patch: { ...prev.patch, ...op.patch },
         });
     }
@@ -90,6 +118,12 @@ export function collapseOperations(
 export class SyncEngine {
     readonly diagramId: string;
     private queue = new Map<string, SyncOperation>();
+    // Lote que falló (o que quedó en vuelo al cerrarse la pestaña) y que se
+    // reenvía TAL CUAL, con su batchId, antes de cualquier otra cosa. No se
+    // fusiona con la cola: si el primer intento sí llegó al servidor, este
+    // responde con el resultado guardado para ese batchId, y cualquier op
+    // añadida al lote se perdería.
+    private retryBatch: Batch | null = null;
     private flushTimer: ReturnType<typeof setTimeout> | null = null;
     private retryTimer: ReturnType<typeof setTimeout> | null = null;
     private inFlight = false;
@@ -129,7 +163,7 @@ export class SyncEngine {
         // esperásemos a la siguiente edición del usuario podría no llegar
         // nunca. Se programa con el debounce normal, no un flush inmediato,
         // para que varias pestañas restaurando a la vez no golpeen la API.
-        if (this.queue.size > 0) this.scheduleFlush();
+        if (this.queue.size > 0 || this.retryBatch) this.scheduleFlush();
     }
 
     // Identifica esta pestaña/sesión ante el backend (ver last_sync_session_id
@@ -153,7 +187,7 @@ export class SyncEngine {
     }
 
     enqueue(operation: SyncOperation): void {
-        const key = `${operation.entity}:${operation.id}`;
+        const key = opKey(operation);
         const existing = this.queue.get(key);
         const merged = existing
             ? collapseOperations([existing, operation])[0]
@@ -226,7 +260,7 @@ export class SyncEngine {
             await this.inFlightDone;
             return this.flushNow();
         }
-        if (this.queue.size === 0) return;
+        if (this.queue.size === 0 && !this.retryBatch) return;
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
             this.notifyStatus('offline');
             return;
@@ -239,20 +273,29 @@ export class SyncEngine {
         });
         this.notifyStatus('saving');
 
-        const batch = [...this.queue.values()];
-        this.queue.clear();
-        this.oldestQueuedAt = null;
-        this.persistQueue();
+        let batch: Batch;
+        if (this.retryBatch) {
+            batch = this.retryBatch;
+        } else {
+            batch = {
+                batchId: crypto.randomUUID(),
+                operations: [...this.queue.values()],
+            };
+            this.queue.clear();
+            this.oldestQueuedAt = null;
+            this.persistQueue();
+        }
         // El lote deja de estar en la cola persistida, así que se guarda bajo
         // su propia clave hasta que sepamos que el servidor lo recibió. Si la
         // pestaña muere con la petición en vuelo, el siguiente arranque lo
-        // recupera desde ahí (ver restoreQueue).
+        // recupera desde ahí, con el mismo batchId (ver restoreInFlight).
         this.persistInFlight(batch);
 
         const body = JSON.stringify({
             baseVersion: this.version,
             sessionId: this.sessionId,
-            operations: batch,
+            batchId: batch.batchId,
+            operations: batch.operations,
         });
 
         try {
@@ -268,25 +311,17 @@ export class SyncEngine {
                 keepalive: byteLength(body) <= KEEPALIVE_MAX_BODY_BYTES,
                 body,
             });
-            this.version = result.version;
+            this.version = Math.max(this.version, result.version);
             this.retryCount = 0;
+            this.retryBatch = null;
             this.clearInFlight();
             this.notifyStatus(this.queue.size > 0 ? 'saving' : 'saved');
             if (result.conflicts.length > 0)
                 this.notifyConflict(result.conflicts);
         } catch (err) {
-            for (const op of batch) {
-                const key = `${op.entity}:${op.id}`;
-                const existing = this.queue.get(key);
-                const merged = existing
-                    ? collapseOperations([op, existing])[0]
-                    : op;
-                this.queue.set(key, merged);
-            }
-            if (this.oldestQueuedAt === null) this.oldestQueuedAt = Date.now();
-            this.persistQueue();
-            // Las operaciones vuelven a estar a salvo en la cola principal.
-            this.clearInFlight();
+            // El lote se reintenta intacto (mismo batchId); sigue persistido
+            // bajo la clave in-flight hasta que el servidor lo confirme.
+            this.retryBatch = batch;
             this.retryCount += 1;
             if (this.retryCount > this.maxRetries) {
                 this.notifyStatus(
@@ -356,9 +391,9 @@ export class SyncEngine {
         }
     }
 
-    private persistInFlight(batch: SyncOperation[]): void {
+    private persistInFlight(batch: Batch): void {
         try {
-            if (batch.length === 0) {
+            if (batch.operations.length === 0) {
                 localStorage.removeItem(this.inFlightKey);
             } else {
                 localStorage.setItem(this.inFlightKey, JSON.stringify(batch));
@@ -383,6 +418,7 @@ export class SyncEngine {
      */
     clearPersistedQueue(): void {
         this.queue.clear();
+        this.retryBatch = null;
         this.oldestQueuedAt = null;
         try {
             localStorage.removeItem(this.storageKey);
@@ -398,7 +434,7 @@ export class SyncEngine {
             if (raw) {
                 const stored = JSON.parse(raw) as SyncOperation[];
                 for (const op of stored) {
-                    this.queue.set(`${op.entity}:${op.id}`, op);
+                    this.queue.set(opKey(op), op);
                 }
             }
         } catch {
@@ -414,17 +450,23 @@ export class SyncEngine {
     /**
      * Recupera un lote que se quedó en vuelo cuando la sesión anterior murió
      * (pestaña cerrada, crash). No sabemos si llegó al servidor, así que se
-     * reencola exactamente igual que en un flush fallido: las operaciones del
-     * lote son las más antiguas, por lo que cualquier cosa ya presente en la
-     * cola restaurada tiene prioridad al fusionar.
+     * reenvía intacto con su batchId: si ya se aplicó, el servidor devuelve
+     * la respuesta guardada. La cola restaurada (más nueva) va después.
+     *
+     * Formato antiguo (array sin batchId, versiones previas del cliente): no
+     * hay idempotencia posible, así que se fusiona bajo la cola como antes.
      */
     private restoreInFlight(): void {
         try {
             const raw = localStorage.getItem(this.inFlightKey);
             if (!raw) return;
-            const stored = JSON.parse(raw) as SyncOperation[];
+            const stored = JSON.parse(raw) as Batch | SyncOperation[];
+            if (!Array.isArray(stored)) {
+                if (stored.operations?.length) this.retryBatch = stored;
+                return;
+            }
             for (const op of stored) {
-                const key = `${op.entity}:${op.id}`;
+                const key = opKey(op);
                 const existing = this.queue.get(key);
                 const merged = existing
                     ? collapseOperations([op, existing])[0]

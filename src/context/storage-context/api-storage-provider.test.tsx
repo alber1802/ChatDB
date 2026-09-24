@@ -381,4 +381,66 @@ describe('ApiStorageProvider + SyncEngine wiring', () => {
             vi.mocked(apiFetch).mock.calls.filter(([p]) => p.includes('/sync'))
         ).toHaveLength(before);
     });
+
+    // Fase 4-a: editar una columna ya no manda el array fields entero.
+    it('applyTableChanges enqueues only the minimal sub-entity ops', async () => {
+        vi.mocked(apiFetch).mockImplementation(async (path: string) => {
+            if (path.endsWith('/sync')) return { version: 2, conflicts: [] };
+            if (path.startsWith('/diagrams/'))
+                return { id: 'd1', version: 1, name: 'x' };
+            return undefined;
+        });
+        const storageRef: { current: StorageHandle | null } = { current: null };
+        render(
+            <ApiStorageProvider>
+                <Probe storageRef={storageRef} />
+            </ApiStorageProvider>
+        );
+        await act(async () => {
+            await storageRef.current!.getDiagram('d1');
+        });
+
+        const prev = {
+            id: 't1',
+            name: 'users',
+            x: 0,
+            y: 0,
+            fields: [
+                { id: 'f1', name: 'id' },
+                { id: 'f2', name: 'email' },
+            ],
+            indexes: [],
+            isView: false,
+            createdAt: 1,
+        } as never;
+        const next = {
+            ...(prev as object),
+            fields: [
+                { id: 'f1', name: 'id' },
+                { id: 'f2', name: 'mail' },
+            ],
+        } as never;
+        await act(async () => {
+            await storageRef.current!.applyTableChanges({
+                diagramId: 'd1',
+                prev,
+                next,
+            });
+            await vi.advanceTimersByTimeAsync(700);
+        });
+
+        const syncCall = vi
+            .mocked(apiFetch)
+            .mock.calls.find(([path]) => String(path).endsWith('/sync'));
+        const body = JSON.parse((syncCall![1] as RequestInit).body as string);
+        expect(body.operations).toEqual([
+            {
+                entity: 'field',
+                op: 'update',
+                id: 'f2',
+                parentId: 't1',
+                patch: { name: 'mail' },
+            },
+        ]);
+    });
 });

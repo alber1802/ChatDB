@@ -421,9 +421,12 @@ describe('SyncEngine', () => {
         expect(localStorage.getItem(QUEUE_KEY)).toBeNull();
         expect(
             JSON.parse(localStorage.getItem(INFLIGHT_KEY) as string)
-        ).toEqual([
-            { entity: 'table', op: 'update', id: 't1', patch: { x: 1 } },
-        ]);
+        ).toEqual({
+            batchId: expect.any(String),
+            operations: [
+                { entity: 'table', op: 'update', id: 't1', patch: { x: 1 } },
+            ],
+        });
 
         settle({ version: 2, conflicts: [] });
         await vi.advanceTimersByTimeAsync(0);
@@ -599,6 +602,172 @@ describe('SyncEngine', () => {
         await vi.advanceTimersByTimeAsync(700);
 
         expect(onStatusChange).toHaveBeenCalledWith('offline', undefined);
+        engine.destroy();
+    });
+
+    // ─── Fase 4-a: idempotencia por batchId ─────────────────────────────
+    const bodies = () =>
+        vi
+            .mocked(apiFetch)
+            .mock.calls.map((call) =>
+                JSON.parse((call[1] as RequestInit).body as string)
+            );
+
+    it('gives each batch its own uuid batchId', async () => {
+        vi.mocked(apiFetch).mockResolvedValue({ version: 2, conflicts: [] });
+        const engine = new SyncEngine({ diagramId: 'd1', initialVersion: 1 });
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { x: 1 },
+        });
+        await vi.advanceTimersByTimeAsync(700);
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { x: 2 },
+        });
+        await vi.advanceTimersByTimeAsync(700);
+
+        const [first, second] = bodies();
+        expect(first.batchId).toMatch(/^[0-9a-f-]{36}$/);
+        expect(second.batchId).not.toBe(first.batchId);
+        engine.destroy();
+    });
+
+    it('resends a failed batch unchanged with the same batchId, and sends later edits in a separate batch', async () => {
+        vi.mocked(apiFetch)
+            .mockRejectedValueOnce(new Error('ack lost'))
+            .mockResolvedValue({ version: 2, conflicts: [] });
+        const engine = new SyncEngine({ diagramId: 'd1', initialVersion: 1 });
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { x: 1 },
+        });
+        await vi.advanceTimersByTimeAsync(700); // falla (quizá sí llegó al servidor)
+
+        // Edición nueva sobre la misma entidad mientras se espera el reintento.
+        engine.enqueue({
+            entity: 'table',
+            op: 'update',
+            id: 't1',
+            patch: { y: 5 },
+        });
+        await vi.advanceTimersByTimeAsync(1000); // reintento
+        await vi.advanceTimersByTimeAsync(700);
+
+        const [attempt, retry, next] = bodies();
+        // Mismo contenido y mismo batchId: si el primer intento sí se aplicó,
+        // el servidor devuelve la respuesta guardada sin perder nada.
+        expect(retry.batchId).toBe(attempt.batchId);
+        expect(retry.operations).toEqual(attempt.operations);
+        expect(next.batchId).not.toBe(attempt.batchId);
+        expect(next.operations).toEqual([
+            { entity: 'table', op: 'update', id: 't1', patch: { y: 5 } },
+        ]);
+        engine.destroy();
+    });
+
+    it('recovers a crashed in-flight batch with its original batchId', async () => {
+        localStorage.setItem(
+            INFLIGHT_KEY,
+            JSON.stringify({
+                batchId: '11111111-1111-4111-8111-111111111111',
+                operations: [
+                    {
+                        entity: 'table',
+                        op: 'update',
+                        id: 't1',
+                        patch: { x: 1 },
+                    },
+                ],
+            })
+        );
+        localStorage.setItem(
+            QUEUE_KEY,
+            JSON.stringify([
+                { entity: 'table', op: 'update', id: 't1', patch: { y: 2 } },
+            ])
+        );
+        vi.mocked(apiFetch).mockResolvedValue({ version: 2, conflicts: [] });
+
+        const engine = new SyncEngine({ diagramId: 'd1', initialVersion: 1 });
+        await vi.advanceTimersByTimeAsync(700);
+        await vi.advanceTimersByTimeAsync(700);
+
+        const [recovered, queued] = bodies();
+        expect(recovered.batchId).toBe('11111111-1111-4111-8111-111111111111');
+        expect(recovered.operations).toEqual([
+            { entity: 'table', op: 'update', id: 't1', patch: { x: 1 } },
+        ]);
+        expect(queued.operations).toEqual([
+            { entity: 'table', op: 'update', id: 't1', patch: { y: 2 } },
+        ]);
+        engine.destroy();
+    });
+
+    it('keys sub-entity ops by table so same-id fields of different tables do not merge', async () => {
+        vi.mocked(apiFetch).mockResolvedValue({ version: 2, conflicts: [] });
+        const engine = new SyncEngine({ diagramId: 'd1', initialVersion: 1 });
+        engine.enqueue({
+            entity: 'field',
+            op: 'update',
+            id: 'f1',
+            parentId: 't1',
+            patch: { a: 1 },
+        });
+        engine.enqueue({
+            entity: 'field',
+            op: 'update',
+            id: 'f1',
+            parentId: 't2',
+            patch: { a: 2 },
+        });
+        engine.enqueue({
+            entity: 'field',
+            op: 'create',
+            id: 'f9',
+            parentId: 't1',
+            afterId: 'f1',
+            patch: { a: 3 },
+        });
+        engine.enqueue({
+            entity: 'field',
+            op: 'update',
+            id: 'f9',
+            parentId: 't1',
+            patch: { b: 4 },
+        });
+        await vi.advanceTimersByTimeAsync(700);
+
+        expect(bodies()[0].operations).toEqual([
+            {
+                entity: 'field',
+                op: 'update',
+                id: 'f1',
+                parentId: 't1',
+                patch: { a: 1 },
+            },
+            {
+                entity: 'field',
+                op: 'update',
+                id: 'f1',
+                parentId: 't2',
+                patch: { a: 2 },
+            },
+            {
+                entity: 'field',
+                op: 'create',
+                id: 'f9',
+                parentId: 't1',
+                afterId: 'f1',
+                patch: { a: 3, b: 4 },
+            },
+        ]);
         engine.destroy();
     });
 });

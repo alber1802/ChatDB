@@ -12,7 +12,8 @@ import type { Note } from '@/lib/domain/note';
 import type { DiagramFilter } from '@/lib/domain/diagram-filter/diagram-filter';
 import type { ChartDBConfig } from '@/lib/domain/config';
 import { apiFetch, buildIncludeQuery } from '@/lib/api-client';
-import type { SyncEntity, SyncStatus } from './sync-engine';
+import type { SyncEntity, SyncOperation, SyncStatus } from './sync-engine';
+import { diffTable } from './table-diff';
 import { SyncEngine } from './sync-engine';
 import { syncStatusContext } from '@/context/sync-status-context/sync-status-context';
 
@@ -89,6 +90,17 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
                     ? engineRef.current
                     : ensureEngine(diagramId, 1);
             engine.enqueue({ entity, op, id, patch });
+        },
+        [ensureEngine]
+    );
+
+    const enqueueOperations = useCallback(
+        (diagramId: string, operations: SyncOperation[]) => {
+            const engine =
+                engineRef.current?.diagramId === diagramId
+                    ? engineRef.current
+                    : ensureEngine(diagramId, 1);
+            for (const operation of operations) engine.enqueue(operation);
         },
         [ensureEngine]
     );
@@ -283,6 +295,22 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             return Promise.resolve();
         },
         [enqueue]
+    );
+
+    const applyTableChanges = useCallback(
+        ({
+            diagramId,
+            prev,
+            next,
+        }: {
+            diagramId: string;
+            prev: DBTable;
+            next: DBTable;
+        }) => {
+            enqueueOperations(diagramId, diffTable(prev, next));
+            return Promise.resolve();
+        },
+        [enqueueOperations]
     );
 
     const deleteTable = useCallback(
@@ -696,6 +724,7 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             getTable,
             updateTable,
             putTable,
+            applyTableChanges,
             deleteTable,
             listTables,
             deleteDiagramTables,
@@ -745,6 +774,7 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
             getTable,
             updateTable,
             putTable,
+            applyTableChanges,
             deleteTable,
             listTables,
             deleteDiagramTables,

@@ -134,6 +134,12 @@ Implementado hasta ahora:
   `readonly` para viewers (`resolveReadonly` en `src/lib/domain/diagram-access.ts`).
   Migración `server/sql/2026-09-23-collab-roles.sql` (cierra además un INSERT
   abierto en `diagram_shares` que permitía darse acceso a cualquier diagrama).
+- **Fase 4-a — ops por elemento**: editar una columna/índice/CHECK envía solo esa op
+  (`diffTable` en `src/context/storage-context/table-diff.ts` → `applyTableChanges`);
+  el servidor la aplica sobre el array JSONB bajo `FOR UPDATE`, cada op en su SAVEPOINT
+  (respuesta `applied`/`rejected`). Reintentos idempotentes por `batchId` si existe
+  `diagram_ops` (migración `2026-09-24-collab-diagram-ops.sql`, opcional). El `SyncEngine`
+  reenvía un lote fallido intacto (no lo fusiona con la cola).
 - **Fase 2 — invitaciones**: tabla `diagram_invitations` sin acceso directo,
   todo vía funciones SECURITY DEFINER (`server/sql/2026-09-23-collab-invitations.sql`);
   módulo `server/src/modules/invitations/`; mailer opcional Resend
