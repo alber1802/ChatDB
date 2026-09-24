@@ -72,25 +72,30 @@ export const sharesService = {
         diagramId: string,
         shareId: string,
         role: ShareRole
-    ): Promise<void> {
-        const { rowCount } = await client.query(
+    ): Promise<string | undefined> {
+        const { rows, rowCount } = await client.query(
             `UPDATE diagram_shares SET role = $3, updated_at = now()
-             WHERE diagram_id = $1 AND id = $2`,
+             WHERE diagram_id = $1 AND id = $2
+             RETURNING shared_with`,
             [diagramId, shareId, role]
         );
         if (!rowCount) throw new AppError(404, 'Share not found', 'not_found');
+        // Usuario afectado, para avisar en vivo a sus sockets (Fase 3).
+        return rows[0]?.shared_with as string | undefined;
     },
 
     async remove(
         client: PoolClient,
         diagramId: string,
         shareId: string
-    ): Promise<void> {
-        const { rowCount } = await client.query(
-            `DELETE FROM diagram_shares WHERE diagram_id = $1 AND id = $2`,
+    ): Promise<string | undefined> {
+        const { rows, rowCount } = await client.query(
+            `DELETE FROM diagram_shares WHERE diagram_id = $1 AND id = $2
+             RETURNING shared_with`,
             [diagramId, shareId]
         );
         if (!rowCount) throw new AppError(404, 'Share not found', 'not_found');
+        return rows[0]?.shared_with as string | undefined;
     },
 
     async leave(

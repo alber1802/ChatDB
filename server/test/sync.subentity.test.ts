@@ -306,6 +306,25 @@ describe('batch idempotency (batchId)', () => {
     });
 });
 
+describe('applyBatch — data for the realtime broadcast', () => {
+    it('returns the applied ops (not the rejected ones) and flags replays', async () => {
+        const db = fakeDb(table());
+        db.enableOpsTable();
+        const ops: SyncOperation[] = [
+            { opId: 'a', entity: 'field', op: 'update', id: 'f1', parentId: 't1', patch: { name: 'k' } },
+            { opId: 'b', entity: 'field', op: 'update', id: 'gone', parentId: 't1', patch: { name: 'x' } },
+        ];
+        const request = { baseVersion: 1, sessionId: 's1', batchId: 'b-9', operations: ops };
+        const first = await syncService.applyBatch(db.client, 'd1', 'u1', request);
+        expect(first.replayed).toBe(false);
+        expect(first.appliedOps.map((o) => o.opId)).toEqual(['a']);
+
+        const again = await syncService.applyBatch(db.client, 'd1', 'u1', request);
+        expect(again.replayed).toBe(true);
+        expect(again.result).toEqual(first.result);
+    });
+});
+
 describe('collapseOperations with sub-entities', () => {
     it('keeps same-id fields of different tables separate and merges same field', () => {
         const result = collapseOperations([

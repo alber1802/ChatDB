@@ -1,13 +1,6 @@
 import type { RequestHandler } from 'express';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { env } from '../config/env.js';
 import { AppError, type AuthUser } from '../lib/types.js';
-
-interface JwtPayload {
-    sub: string;
-    role?: string;
-    aud?: string;
-}
+import { verifyAccessToken } from '../lib/jwt.js';
 
 declare global {
     // Express's own type augmentation pattern requires a namespace here;
@@ -21,12 +14,6 @@ declare global {
     }
 }
 
-// Supabase signs session tokens with its rotating JWT signing keys (ES256),
-// published as a JWKS — not the legacy shared HS256 secret.
-const jwks = createRemoteJWKSet(
-    new URL('/auth/v1/.well-known/jwks.json', env.SUPABASE_URL)
-);
-
 export const authenticate: RequestHandler = async (req, _res, next) => {
     const header = req.headers.authorization;
     if (!header?.startsWith('Bearer ')) {
@@ -39,20 +26,8 @@ export const authenticate: RequestHandler = async (req, _res, next) => {
     }
 
     try {
-        const { payload } = (await jwtVerify(token, jwks, {
-            issuer: new URL('/auth/v1', env.SUPABASE_URL).toString(),
-        })) as { payload: JwtPayload };
-
-        if (!payload.sub) {
-            return next(
-                new AppError(401, 'Invalid token payload', 'invalid_token')
-            );
-        }
-
-        req.user = {
-            id: payload.sub,
-            role: payload.role ?? 'authenticated',
-        };
+        const { id, role } = await verifyAccessToken(token);
+        req.user = { id, role };
         next();
     } catch {
         next(new AppError(401, 'Invalid or expired token', 'invalid_token'));

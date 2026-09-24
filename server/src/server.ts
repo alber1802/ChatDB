@@ -3,6 +3,7 @@ import { env } from './config/env.js';
 import { closePool } from './config/db.js';
 import { closeRedis, connectRedis } from './config/redis.js';
 import { logger } from './lib/logger.js';
+import { getRealtimeBus, startRealtime } from './modules/realtime/realtime.js';
 
 const app = createApp();
 
@@ -16,10 +17,15 @@ async function main() {
         );
     });
 
+    const realtime = startRealtime(server);
+
     const shutdown = async (signal: string) => {
         logger.info({ signal }, 'Shutting down gracefully');
+        // 1012 = service restart: los clientes reconectan con backoff.
+        realtime?.close();
         server.close(async () => {
             try {
+                await getRealtimeBus().close();
                 await closePool();
                 await closeRedis();
                 logger.info('Shutdown complete');

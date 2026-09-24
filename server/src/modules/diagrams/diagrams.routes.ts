@@ -10,6 +10,7 @@ import {
 import { AppError } from '../../lib/types.js';
 import { diagramsService } from './diagrams.service.js';
 import { syncService } from '../sync/sync.service.js';
+import { realtime } from '../realtime/realtime.js';
 import type { DiagramDto } from '../../lib/mappers.js';
 
 export const diagramsRouter = Router();
@@ -68,9 +69,27 @@ diagramsRouter.patch('/:id', async (req, res, next) => {
 diagramsRouter.post('/:id/sync', async (req, res, next) => {
     try {
         const body = syncRequestSchema.parse(req.body);
-        const result = await withUserContext(req.user!.id, (client) =>
-            syncService.apply(client, req.params.id, req.user!.id, body)
+        const { result, appliedOps, replayed } = await withUserContext(
+            req.user!.id,
+            (client) =>
+                syncService.applyBatch(
+                    client,
+                    req.params.id,
+                    req.user!.id,
+                    body
+                )
         );
+        // Ya confirmado: se difunde a los demás miembros de la sala.
+        if (!replayed) {
+            realtime.publishBatch({
+                diagramId: req.params.id,
+                version: result.version,
+                batchId: body.batchId,
+                sessionId: body.sessionId,
+                userId: req.user!.id,
+                operations: appliedOps,
+            });
+        }
         res.json(result);
     } catch (err) {
         next(err);
@@ -82,6 +101,7 @@ diagramsRouter.delete('/:id', async (req, res, next) => {
         await withUserContext(req.user!.id, (client) =>
             diagramsService.remove(client, req.params.id)
         );
+        realtime.diagramDeleted(req.params.id);
         res.status(204).send();
     } catch (err) {
         next(err);

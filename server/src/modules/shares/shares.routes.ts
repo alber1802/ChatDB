@@ -3,6 +3,7 @@ import { withUserContext } from '../../config/db.js';
 import { authenticate } from '../../middleware/auth.js';
 import { shareCreateSchema, shareRolePatchSchema } from '../../lib/schemas.js';
 import { sharesService } from './shares.service.js';
+import { realtime } from '../realtime/realtime.js';
 
 // Dos formas de dar acceso (docs/collaboration/02-sharing-and-permissions.md):
 // directa a un usuario del sistema (POST aquí, con notificación interna) o
@@ -43,7 +44,7 @@ sharesRouter.patch(
     async (req, res, next) => {
         try {
             const { role } = shareRolePatchSchema.parse(req.body);
-            await withUserContext(req.user!.id, (client) =>
+            const affected = await withUserContext(req.user!.id, (client) =>
                 sharesService.updateRole(
                     client,
                     req.params.diagramId,
@@ -51,6 +52,9 @@ sharesRouter.patch(
                     role
                 )
             );
+            // Sus sockets abiertos cambian a lector/editor sin recargar.
+            if (affected)
+                realtime.accessChanged(req.params.diagramId, affected);
             res.status(204).send();
         } catch (err) {
             next(err);
@@ -66,6 +70,7 @@ sharesRouter.delete(
             await withUserContext(req.user!.id, (client) =>
                 sharesService.leave(client, req.params.diagramId, req.user!.id)
             );
+            realtime.accessChanged(req.params.diagramId, req.user!.id);
             res.status(204).send();
         } catch (err) {
             next(err);
@@ -77,13 +82,16 @@ sharesRouter.delete(
     '/diagrams/:diagramId/shares/:shareId',
     async (req, res, next) => {
         try {
-            await withUserContext(req.user!.id, (client) =>
+            const affected = await withUserContext(req.user!.id, (client) =>
                 sharesService.remove(
                     client,
                     req.params.diagramId,
                     req.params.shareId
                 )
             );
+            // Revocado: el servidor WebSocket lo saca de la sala al instante.
+            if (affected)
+                realtime.accessChanged(req.params.diagramId, affected);
             res.status(204).send();
         } catch (err) {
             next(err);

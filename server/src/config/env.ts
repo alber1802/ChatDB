@@ -15,6 +15,13 @@ const envSchema = z.object({
     SUPABASE_URL: z.string().url(),
     SUPABASE_ANON_KEY: z.string().min(1),
     REDIS_URL: z.string().optional().default(''),
+    // Colaboración en tiempo real (WebSocket en /realtime). Con varias
+    // instancias del API hace falta REDIS_URL para que se vean entre sí.
+    REALTIME_ENABLED: z
+        .enum(['true', 'false'])
+        .optional()
+        .default('true')
+        .transform((v) => v === 'true'),
     // Invitaciones (Fase 2 de colaboración). Sin RESEND_API_KEY/MAIL_FROM no
     // se envían correos y el owner copia el enlace desde el modal.
     RESEND_API_KEY: z.string().optional().default(''),

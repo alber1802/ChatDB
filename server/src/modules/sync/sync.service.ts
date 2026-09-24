@@ -372,6 +372,14 @@ export async function applyOperation(
     }
 }
 
+export interface AppliedBatch {
+    result: SyncResult;
+    /** Ops realmente aplicadas (para difundirlas por WebSocket). */
+    appliedOps: SyncOperation[];
+    /** true si era un reintento de un lote ya aplicado: no se vuelve a difundir. */
+    replayed: boolean;
+}
+
 export const syncService = {
     collapseOperations,
 
@@ -381,6 +389,17 @@ export const syncService = {
         userId: string,
         request: SyncRequest
     ): Promise<SyncResult> {
+        return (
+            await syncService.applyBatch(client, diagramId, userId, request)
+        ).result;
+    },
+
+    async applyBatch(
+        client: PoolClient,
+        diagramId: string,
+        userId: string,
+        request: SyncRequest
+    ): Promise<AppliedBatch> {
         // Se consulta el rol ANTES del `FOR UPDATE`: RLS oculta la fila de
         // `diagrams` a quien no puede actualizarla, así que un viewer
         // recibiría un 404 engañoso en vez de un 403.
@@ -432,7 +451,13 @@ export const syncService = {
                 [diagramId, request.batchId]
             );
             // Reintento de un lote ya aplicado (el ack se perdió): misma respuesta.
-            if (stored[0]) return stored[0].result as SyncResult;
+            if (stored[0]) {
+                return {
+                    result: stored[0].result as SyncResult,
+                    appliedOps: [],
+                    replayed: true,
+                };
+            }
         }
 
         const ops = collapseOperations(request.operations);
@@ -506,7 +531,7 @@ export const syncService = {
             }
         }
 
-        return result;
+        return { result, appliedOps, replayed: false };
     },
 };
 
