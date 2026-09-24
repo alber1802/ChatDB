@@ -43,6 +43,9 @@ export interface TableDto {
     isView: boolean;
     isMaterializedView: boolean;
     order?: number;
+    checkConstraints?: unknown[] | null;
+    expanded?: boolean | null;
+    parentAreaId?: string | null;
     createdAt: number;
 }
 
@@ -166,6 +169,9 @@ export function rowToTable(row: Record<string, unknown>): TableDto {
         isView: Boolean(row.is_view ?? false),
         isMaterializedView: Boolean(row.is_materialized_view ?? false),
         order: row.order != null ? Number(row.order) : undefined,
+        checkConstraints: (row.check_constraints as unknown[]) || [],
+        expanded: row.expanded != null ? Boolean(row.expanded) : undefined,
+        parentAreaId: (row.parent_area_id as string) || null,
         createdAt: new Date(String(row.created_at)).getTime(),
     };
 }
@@ -187,6 +193,9 @@ export function tableToRow(table: TableDto, diagramId: string, userId: string) {
         is_view: table.isView ?? false,
         is_materialized_view: table.isMaterializedView ?? false,
         order: table.order ?? null,
+        check_constraints: JSON.stringify(table.checkConstraints ?? []),
+        expanded: table.expanded ?? null,
+        parent_area_id: table.parentAreaId ?? null,
         created_at: table.createdAt
             ? new Date(table.createdAt).toISOString()
             : new Date().toISOString(),

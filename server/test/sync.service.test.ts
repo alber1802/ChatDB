@@ -116,7 +116,12 @@ describe('applyOperation — diagram patches', () => {
         });
 
         // Antes del arreglo esto lanzaba ZodError y hacía rollback del batch.
-        expect(result).toEqual({ version: 2, conflicts: [] });
+        expect(result).toEqual({
+            version: 2,
+            conflicts: [],
+            applied: [],
+            rejected: [],
+        });
     });
 });
 

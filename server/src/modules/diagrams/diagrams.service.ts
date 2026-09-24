@@ -295,6 +295,14 @@ export const diagramsService = {
             mapped.is_materialized_view = attributes.isMaterializedView;
         if (attributes.order !== undefined)
             mapped.order = attributes.order ?? null;
+        if (attributes.checkConstraints !== undefined)
+            mapped.check_constraints = JSON.stringify(
+                attributes.checkConstraints ?? []
+            );
+        if (attributes.expanded !== undefined)
+            mapped.expanded = attributes.expanded ?? null;
+        if (attributes.parentAreaId !== undefined)
+            mapped.parent_area_id = attributes.parentAreaId ?? null;
 
         if (Object.keys(mapped).length === 0) return;
         const keys = Object.keys(mapped);

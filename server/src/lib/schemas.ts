@@ -39,6 +39,11 @@ export const tableSchema = z.object({
     isView: z.boolean().optional().default(false),
     isMaterializedView: z.boolean().optional().default(false),
     order: z.number().optional().nullable(),
+    // Antes no estaban en el esquema y zod los descartaba en silencio: ningún
+    // CHECK, área padre ni estado expandido llegaba nunca a la base.
+    checkConstraints: z.array(z.any()).nullable().optional(),
+    expanded: z.boolean().nullable().optional(),
+    parentAreaId: z.string().nullable().optional(),
     createdAt: z.union([z.string(), z.number(), z.date()]).optional(),
 });
 
@@ -49,12 +54,15 @@ export const tablePatchSchema = z.object({
     y: z.number().optional(),
     fields: z.array(z.any()).optional(),
     indexes: z.array(z.any()).optional(),
+    checkConstraints: z.array(z.any()).nullable().optional(),
     color: z.string().nullable().optional(),
     width: z.number().nullable().optional(),
     comments: z.string().nullable().optional(),
     isView: z.boolean().optional(),
     isMaterializedView: z.boolean().optional(),
     order: z.number().nullable().optional(),
+    expanded: z.boolean().nullable().optional(),
+    parentAreaId: z.string().nullable().optional(),
 });
 
 export const relationshipSchema = z.object({
@@ -233,23 +241,38 @@ export const includeQuerySchema = z.object({
         .transform((v) => v === true || v === 'true'),
 });
 
-export const syncOperationSchema = z.object({
-    entity: z.enum([
-        'diagram',
-        'table',
-        'relationship',
-        'dependency',
-        'area',
-        'customType',
-        'note',
-    ]),
-    op: z.enum(['create', 'update', 'delete']),
-    id: z.string().min(1),
-    patch: z.record(z.string(), z.any()).optional(),
-});
+const SUB_ENTITIES = ['field', 'index', 'checkConstraint'] as const;
+
+export const syncOperationSchema = z
+    .object({
+        opId: z.string().min(1).max(100).optional(),
+        entity: z.enum([
+            'diagram',
+            'table',
+            ...SUB_ENTITIES,
+            'relationship',
+            'dependency',
+            'area',
+            'customType',
+            'note',
+        ]),
+        op: z.enum(['create', 'update', 'delete']),
+        id: z.string().min(1),
+        // Tabla contenedora de field/index/checkConstraint.
+        parentId: z.string().min(1).optional(),
+        afterId: z.string().min(1).nullable().optional(),
+        patch: z.record(z.string(), z.any()).optional(),
+    })
+    .refine(
+        (op) =>
+            !(SUB_ENTITIES as readonly string[]).includes(op.entity) ||
+            Boolean(op.parentId),
+        { message: 'parentId is required for field/index/checkConstraint' }
+    );
 
 export const syncRequestSchema = z.object({
     baseVersion: z.number().int().nonnegative(),
     sessionId: z.string().min(1).max(100).optional(),
+    batchId: z.string().uuid().optional(),
     operations: z.array(syncOperationSchema).min(1).max(500),
 });
