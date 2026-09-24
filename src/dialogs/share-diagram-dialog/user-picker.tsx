@@ -20,6 +20,7 @@ import {
     collaborationApi,
     type ShareCandidate,
 } from '@/lib/collaboration/collaboration-api';
+import { invitationErrorMessage } from '@/lib/collaboration/share-helpers';
 import { PersonAvatar } from './person-avatar';
 
 const SEARCH_DEBOUNCE_MS = 250;
@@ -39,6 +40,7 @@ export const UserPicker: React.FC<{
     const [query, setQuery] = useState('');
     const [users, setUsers] = useState<ShareCandidate[]>([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string>();
     const abortRef = useRef<AbortController>();
 
     useEffect(() => {
@@ -49,6 +51,7 @@ export const UserPicker: React.FC<{
                 const controller = new AbortController();
                 abortRef.current = controller;
                 setLoading(true);
+                setError(undefined);
                 try {
                     setUsers(
                         await collaborationApi.searchCandidates(
@@ -57,8 +60,12 @@ export const UserPicker: React.FC<{
                             controller.signal
                         )
                     );
-                } catch {
-                    // abortada o error de red: se mantiene la lista anterior
+                } catch (err) {
+                    // Una petición abortada (el usuario siguió escribiendo) no es un error.
+                    if (!controller.signal.aborted) {
+                        setUsers([]);
+                        setError(invitationErrorMessage(err));
+                    }
                 } finally {
                     if (!controller.signal.aborted) setLoading(false);
                 }
@@ -111,7 +118,14 @@ export const UserPicker: React.FC<{
                         onValueChange={setQuery}
                     />
                     <CommandList>
-                        {loading && users.length === 0 ? (
+                        {error ? (
+                            <p
+                                role="alert"
+                                className="px-3 py-4 text-center text-sm text-destructive"
+                            >
+                                {error}
+                            </p>
+                        ) : loading && users.length === 0 ? (
                             <div className="flex justify-center py-6">
                                 <Spinner size="small" />
                             </div>

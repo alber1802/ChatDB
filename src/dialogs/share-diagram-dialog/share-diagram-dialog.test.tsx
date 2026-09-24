@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { ShareDiagramDialog } from './share-diagram-dialog';
+import { ApiError } from '@/lib/api-client';
 
 const api = vi.hoisted(() => ({
     getDiagramAccess: vi.fn(),
@@ -178,5 +179,24 @@ describe('ShareDiagramDialog', () => {
             expect(screen.getByText('Lector')).toBeInTheDocument()
         );
         expect(api.listInvitations).not.toHaveBeenCalled();
+    });
+
+    it('explains why the user list is empty when the search fails, instead of "no matches"', async () => {
+        api.getDiagramAccess.mockResolvedValue(ownerAccess);
+        api.searchCandidates.mockRejectedValue(
+            new ApiError('x', 503, 'migration_pending')
+        );
+        const user = userEvent.setup();
+        renderDialog();
+
+        await user.click(
+            await screen.findByRole('combobox', {
+                name: /seleccionar usuario/i,
+            })
+        );
+        expect(await screen.findByRole('alert')).toHaveTextContent(/migraci/i);
+        expect(
+            screen.queryByText(/no hay usuarios que coincidan/i)
+        ).not.toBeInTheDocument();
     });
 });
