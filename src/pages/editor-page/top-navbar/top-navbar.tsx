@@ -4,6 +4,7 @@ import ChartDBDarkLogo from '@/assets/logo-dark.png';
 import { useTheme } from '@/hooks/use-theme';
 import { DiagramName } from './diagram-name';
 import { LastSaved } from './last-saved';
+import { ShareButton } from './share-button';
 import { LanguageNav } from './language-nav/language-nav';
 import { Menu } from './menu/menu';
 
@@ -41,6 +42,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
             <DiagramName />
             <div className="hidden flex-1 items-center justify-end gap-2 sm:flex">
                 <LastSaved />
+                <ShareButton />
                 {/* {renderStars()} */}
                 <LanguageNav />
                 {IS_SUPABASE_ENABLED && user && (

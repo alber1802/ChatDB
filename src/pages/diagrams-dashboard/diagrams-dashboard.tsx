@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import type { Diagram } from '@/lib/domain/diagram';
+import { PendingInvitations } from './_components/pending-invitations';
 import { Helmet } from 'react-helmet-async';
 import { useDashboard } from './_hooks/use-dashboard';
 import { DashboardHeader } from './_components/dashboard-header';
@@ -30,9 +32,22 @@ import { ExportImageProvider } from '@/context/export-image-context/export-image
 import { AlertProvider } from '@/context/alert-context/alert-provider';
 
 const DiagramsDashboardPageComponent: React.FC = () => {
-    const { diagrams, loading, handleDelete, handleRename, handleDuplicate } =
-        useDashboard();
-    const { openCreateDiagramDialog } = useDialog();
+    const {
+        diagrams,
+        loading,
+        refetch,
+        handleDelete,
+        handleRename,
+        handleDuplicate,
+    } = useDashboard();
+    const { openCreateDiagramDialog, openShareDiagramDialog } = useDialog();
+
+    const handleShare = (diagram: Diagram) =>
+        openShareDiagramDialog({
+            diagramId: diagram.id,
+            diagramName: diagram.name,
+            onChanged: refetch,
+        });
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDBType, setSelectedDBType] = useState('all');
@@ -133,6 +148,8 @@ const DiagramsDashboardPageComponent: React.FC = () => {
                         </p>
                     </div>
 
+                    <PendingInvitations onAccepted={refetch} />
+
                     <DashboardToolbar
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
@@ -159,6 +176,7 @@ const DiagramsDashboardPageComponent: React.FC = () => {
                                             onDelete={handleDelete}
                                             onRename={handleRename}
                                             onDuplicate={handleDuplicate}
+                                            onShare={handleShare}
                                         />
                                     ))}
                                 </div>
@@ -194,6 +212,7 @@ const DiagramsDashboardPageComponent: React.FC = () => {
                                         onDelete={handleDelete}
                                         onRename={handleRename}
                                         onDuplicate={handleDuplicate}
+                                        onShare={handleShare}
                                     />
                                 ))}
                             </div>
@@ -206,6 +225,7 @@ const DiagramsDashboardPageComponent: React.FC = () => {
                                         onDelete={handleDelete}
                                         onRename={handleRename}
                                         onDuplicate={handleDuplicate}
+                                        onShare={handleShare}
                                     />
                                 ))}
                             </div>

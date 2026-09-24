@@ -2,6 +2,7 @@ import React from 'react';
 import ChartDBLogo from '@/assets/logo-2.png';
 import { DiagramName } from './diagram-name';
 import { LastSaved } from './last-saved';
+import { ShareButton } from './share-button';
 import { LanguageNav } from './language-nav/language-nav';
 import { Menu } from './menu/menu';
 import { Button } from '@/components/button/button';
@@ -40,6 +41,7 @@ export const TopNavbarMobile: React.FC<TopNavbarMobileProps> = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <ShareButton compact />
                         <LanguageNav />
                         {IS_SUPABASE_ENABLED && user && (
                             <Button

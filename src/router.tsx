@@ -41,6 +41,15 @@ const routes: RouteObject[] = [
                 },
             },
             {
+                // Sin ProtectedRoute: sin sesión guarda el token y redirige a /auth.
+                path: 'invite/:token',
+                async lazy() {
+                    const { InvitePage } =
+                        await import('./pages/invite-page/invite-page');
+                    return { element: <InvitePage /> };
+                },
+            },
+            {
                 path: 'diagrams/:diagramId',
                 async lazy() {
                     const { EditorPage } =

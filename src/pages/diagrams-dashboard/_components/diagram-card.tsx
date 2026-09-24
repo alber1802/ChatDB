@@ -34,6 +34,7 @@ import {
     Copy,
     ExternalLink,
     LogOut,
+    Share2,
     Users,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -49,6 +50,7 @@ interface DiagramCardProps {
     onDelete: (id: string) => Promise<void>;
     onRename: (id: string, newName: string) => Promise<void>;
     onDuplicate: (diagram: Diagram) => Promise<void>;
+    onShare?: (diagram: Diagram) => void;
 }
 
 export const DiagramCard: React.FC<DiagramCardProps> = ({
@@ -56,6 +58,7 @@ export const DiagramCard: React.FC<DiagramCardProps> = ({
     onDelete,
     onRename,
     onDuplicate,
+    onShare,
 }) => {
     const navigate = useNavigate();
     const [isRenameOpen, setIsRenameOpen] = useState(false);
@@ -162,6 +165,15 @@ export const DiagramCard: React.FC<DiagramCardProps> = ({
                                     <Copy className="size-3.5 text-muted-foreground" />
                                     Duplicar
                                 </DropdownMenuItem>
+                                {onShare && (
+                                    <DropdownMenuItem
+                                        onClick={() => onShare(diagram)}
+                                        className="cursor-pointer gap-2"
+                                    >
+                                        <Share2 className="size-3.5 text-muted-foreground" />
+                                        {isOwner ? 'Compartir…' : 'Ver acceso…'}
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                     onClick={() => setIsDeleteOpen(true)}

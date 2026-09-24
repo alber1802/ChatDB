@@ -122,6 +122,27 @@ navegador siguen contando como sesiones distintas) que el servidor guarda en
 (otra sesión avanzó la versión) de un simple reintento de la misma sesión
 cuyo ack se perdió por la red.
 
+## Colaboración (en curso, rama `develop`)
+
+Plan completo en `docs/collaboration/` (README = índice y orden de fases).
+Implementado hasta ahora:
+
+- **Fase 1 — roles**: `owner` implícito (`diagrams.user_id`), `editor`/`viewer`
+  en `diagram_shares`. La API devuelve `accessRole` y `owner` en
+  `GET /diagrams[/:id]` (expresión `ACCESS_ROLE_SQL` en `diagrams.service.ts`);
+  `/sync` rechaza viewers con `403 forbidden_role`; el editor abre en
+  `readonly` para viewers (`resolveReadonly` en `src/lib/domain/diagram-access.ts`).
+  Migración `server/sql/2026-09-23-collab-roles.sql` (cierra además un INSERT
+  abierto en `diagram_shares` que permitía darse acceso a cualquier diagrama).
+- **Fase 2 — invitaciones**: tabla `diagram_invitations` sin acceso directo,
+  todo vía funciones SECURITY DEFINER (`server/sql/2026-09-23-collab-invitations.sql`);
+  módulo `server/src/modules/invitations/`; mailer opcional Resend
+  (`RESEND_API_KEY`, `MAIL_FROM`, `APP_URL`). Frontend: `ShareDiagramDialog`
+  (registrado en `dialog-context`), botón en la barra del editor,
+  `PendingInvitations` en el Dashboard y ruta `/invite/:token`.
+  Ojo: dentro de Postgres `auth.email()` es NULL (el backend solo fija `sub` y
+  `role` en los claims); usar `current_user_email()`.
+
 ## Bugs reales encontrados y arreglados (sesión 2026-09-12)
 
 Estos no son solo optimizaciones de rendimiento — dos de ellos corrompían

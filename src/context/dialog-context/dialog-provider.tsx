@@ -16,6 +16,8 @@ import type { TableSchemaDialogProps } from '@/dialogs/table-schema-dialog/table
 import { TableSchemaDialog } from '@/dialogs/table-schema-dialog/table-schema-dialog';
 import { emptyFn } from '@/lib/utils';
 import { StarUsDialog } from '@/dialogs/star-us-dialog/star-us-dialog';
+import type { ShareDiagramDialogProps } from '@/dialogs/share-diagram-dialog/share-diagram-dialog';
+import { ShareDiagramDialog } from '@/dialogs/share-diagram-dialog/share-diagram-dialog';
 import type { ExportImageDialogProps } from '@/dialogs/export-image-dialog/export-image-dialog';
 import { ExportImageDialog } from '@/dialogs/export-image-dialog/export-image-dialog';
 import { ExportDiagramDialog } from '@/dialogs/export-diagram-dialog/export-diagram-dialog';
@@ -63,6 +65,17 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
         );
 
     const [openStarUsDialog, setOpenStarUsDialog] = useState(false);
+
+    // Share diagram dialog
+    const [openShareDiagramDialog, setOpenShareDiagramDialog] = useState(false);
+    const [shareDiagramDialogParams, setShareDiagramDialogParams] = useState<
+        Omit<ShareDiagramDialogProps, 'dialog'>
+    >({ diagramId: '', diagramName: '' });
+    const openShareDiagramDialogHandler: DialogContext['openShareDiagramDialog'] =
+        useCallback((params) => {
+            setShareDiagramDialogParams(params);
+            setOpenShareDiagramDialog(true);
+        }, []);
 
     // Export image dialog
     const [openExportImageDialog, setOpenExportImageDialog] = useState(false);
@@ -163,6 +176,8 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                 openImportDiagramDialog: () => setOpenImportDiagramDialog(true),
                 closeImportDiagramDialog: () =>
                     setOpenImportDiagramDialog(false),
+                openShareDiagramDialog: openShareDiagramDialogHandler,
+                closeShareDiagramDialog: () => setOpenShareDiagramDialog(false),
             }}
         >
             {children}
@@ -197,6 +212,12 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
             />
             <ExportDiagramDialog dialog={{ open: openExportDiagramDialog }} />
             <ImportDiagramDialog dialog={{ open: openImportDiagramDialog }} />
+            {shareDiagramDialogParams.diagramId && (
+                <ShareDiagramDialog
+                    dialog={{ open: openShareDiagramDialog }}
+                    {...shareDiagramDialogParams}
+                />
+            )}
         </dialogContext.Provider>
     );
 };
