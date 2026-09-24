@@ -140,6 +140,12 @@ Implementado hasta ahora:
   (respuesta `applied`/`rejected`). Reintentos idempotentes por `batchId` si existe
   `diagram_ops` (migración `2026-09-24-collab-diagram-ops.sql`, opcional). El `SyncEngine`
   reenvía un lote fallido intacto (no lo fusiona con la cola).
+- **Fase 3 — tiempo real**: WebSocket `/realtime` (`server/src/modules/realtime/`), bus en
+  memoria o Redis. POST `/sync` publica las ops aplicadas tras el commit. Cliente:
+  `RealtimeClient` (`src/lib/realtime/`) abierto por `ApiStorageProvider` solo cuando el
+  editor se suscribe (`realtime-context`); `ChartDBProvider` aplica los lotes remotos con
+  `applyRemoteOperations` (solo setters, sin storage ni historial) y emite `add_tables`/
+  `remove_tables` para el filtro. Flags: `REALTIME_ENABLED` (server), `VITE_COLLAB_REALTIME`.
 - **Fase 2 — invitaciones**: tabla `diagram_invitations` sin acceso directo,
   todo vía funciones SECURITY DEFINER (`server/sql/2026-09-23-collab-invitations.sql`);
   módulo `server/src/modules/invitations/`; mailer opcional Resend

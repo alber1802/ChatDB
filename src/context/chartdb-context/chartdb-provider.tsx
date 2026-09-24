@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import type { DBTable } from '@/lib/domain/db-table';
 import { deepCopy, generateId } from '@/lib/utils';
 import { defaultTableColor, randomColor, viewColor } from '@/lib/colors';
@@ -36,6 +42,30 @@ import {
 import { getDefaultPrimaryKeyType } from '@/lib/data/data-types/data-types';
 import type { DiagramAccessRole } from '@/lib/domain/diagram-access';
 import { resolveReadonly } from '@/lib/domain/diagram-access';
+import { useRealtime } from '@/context/realtime-context/realtime-context';
+import type { SyncOperation } from '@/context/storage-context/sync-engine';
+import {
+    applyRemoteOperations,
+    type RemoteDiagramState,
+} from '@/lib/realtime/apply-remote-operations';
+import { notify } from '@/lib/notifications';
+
+const EMPTY_REMOTE_STATE: RemoteDiagramState = {
+    diagram: { name: '', databaseType: DatabaseType.GENERIC },
+    tables: [],
+    relationships: [],
+    dependencies: [],
+    areas: [],
+    customTypes: [],
+    notes: [],
+};
+
+const TABLE_ENTITIES = new Set<SyncOperation['entity']>([
+    'table',
+    'field',
+    'index',
+    'checkConstraint',
+]);
 
 export interface ChartDBProviderProps {
     diagram?: Diagram;
@@ -1967,6 +1997,8 @@ export const ChartDBProvider: React.FC<
         [db, storageDB, loadDiagramFromData]
     );
 
+    // Para recargar desde el listener de realtime (resync) sin re-suscribirse.
+    const loadDiagramRef = useRef<ChartDBContext['loadDiagram']>();
     const loadDiagram: ChartDBContext['loadDiagram'] = useCallback(
         async (diagramId: string) => {
             const diagram = await storageDB.getDiagram(diagramId, {
@@ -1986,6 +2018,132 @@ export const ChartDBProvider: React.FC<
         },
         [storageDB, loadDiagramFromData]
     );
+    loadDiagramRef.current = loadDiagram;
+
+    // ─── Colaboración en vivo (docs/collaboration/03-realtime-synchronization.md)
+    // Los lotes de otros colaboradores se aplican SOLO con setters: sin
+    // escribir al storage (no se reenvían al servidor) y sin tocar el
+    // historial de deshacer. Todo lo que llega en el mismo frame se aplica en
+    // un único render.
+    const { subscribe: subscribeRealtime } = useRealtime();
+    const remoteQueueRef = useRef<SyncOperation[]>([]);
+    const remoteFrameRef = useRef<number | null>(null);
+
+    const flushRemoteOperations = useCallback(() => {
+        remoteFrameRef.current = null;
+        const ops = remoteQueueRef.current;
+        remoteQueueRef.current = [];
+        if (ops.length === 0) return;
+
+        const pick = (predicate: (op: SyncOperation) => boolean) =>
+            ops.filter(predicate);
+        const tableOps = pick((op) => TABLE_ENTITIES.has(op.entity));
+        const apply = <K extends keyof RemoteDiagramState>(
+            key: K,
+            subset: SyncOperation[]
+        ) =>
+            subset.length === 0
+                ? null
+                : (prev: RemoteDiagramState[K]) =>
+                      applyRemoteOperations(
+                          { ...EMPTY_REMOTE_STATE, [key]: prev },
+                          subset
+                      )[key];
+
+        const tablesUpdate = apply('tables', tableOps);
+        if (tablesUpdate) setTables(tablesUpdate);
+        // Mismos eventos que emiten los mutadores locales: p.ej. el filtro de
+        // visibilidad añade las tablas nuevas; sin esto una tabla creada por
+        // otro colaborador aparecería oculta.
+        const createdTables = tableOps
+            .filter((op) => op.entity === 'table' && op.op === 'create')
+            .map((op) => ({ ...op.patch, id: op.id }) as DBTable);
+        if (createdTables.length > 0) {
+            events.emit({
+                action: 'add_tables',
+                data: { tables: createdTables },
+            });
+        }
+        const removedTableIds = tableOps
+            .filter((op) => op.entity === 'table' && op.op === 'delete')
+            .map((op) => op.id);
+        if (removedTableIds.length > 0) {
+            events.emit({
+                action: 'remove_tables',
+                data: { tableIds: removedTableIds },
+            });
+        }
+        const byEntity = (entity: SyncOperation['entity']) =>
+            pick((op) => op.entity === entity);
+        const relationshipsUpdate = apply(
+            'relationships',
+            byEntity('relationship')
+        );
+        if (relationshipsUpdate) setRelationships(relationshipsUpdate);
+        const dependenciesUpdate = apply(
+            'dependencies',
+            byEntity('dependency')
+        );
+        if (dependenciesUpdate) setDependencies(dependenciesUpdate);
+        const areasUpdate = apply('areas', byEntity('area'));
+        if (areasUpdate) setAreas(areasUpdate);
+        const customTypesUpdate = apply('customTypes', byEntity('customType'));
+        if (customTypesUpdate) setCustomTypes(customTypesUpdate);
+        const notesUpdate = apply('notes', byEntity('note'));
+        if (notesUpdate) setNotes(notesUpdate);
+
+        for (const op of byEntity('diagram')) {
+            const patch = op.patch as Partial<Diagram> | undefined;
+            if (!patch) continue;
+            if (patch.name !== undefined) setDiagramName(patch.name);
+            if (patch.databaseType !== undefined)
+                setDatabaseType(patch.databaseType);
+            if (patch.databaseEdition !== undefined)
+                setDatabaseEdition(patch.databaseEdition ?? undefined);
+        }
+        setDiagramUpdatedAt(new Date());
+    }, [events]);
+
+    useEffect(() => {
+        // Plantillas/ejemplos (readonly explícito) no son diagramas del API.
+        if (!diagramId || readonlyProp !== undefined) return;
+        const unsubscribe = subscribeRealtime(diagramId, {
+            onBatch: (operations) => {
+                remoteQueueRef.current.push(...operations);
+                remoteFrameRef.current ??= requestAnimationFrame(
+                    flushRemoteOperations
+                );
+            },
+            onResync: () => {
+                void loadDiagramRef.current?.(diagramId);
+            },
+            onAccess: (role) => {
+                if (role) {
+                    setAccessRole(role);
+                    notify.success(
+                        role === 'viewer'
+                            ? 'Ahora tienes acceso de solo lectura'
+                            : 'Ahora puedes editar este diagrama'
+                    );
+                    return;
+                }
+                notify.error('Ya no tienes acceso a este diagrama');
+                window.location.assign('/');
+            },
+            onDeleted: () => {
+                notify.error('El propietario eliminó este diagrama');
+                window.location.assign('/');
+            },
+        });
+        return () => {
+            unsubscribe();
+            if (remoteFrameRef.current !== null) {
+                cancelAnimationFrame(remoteFrameRef.current);
+                remoteFrameRef.current = null;
+            }
+            remoteQueueRef.current = [];
+        };
+    }, [diagramId, readonlyProp, subscribeRealtime, flushRemoteOperations]);
 
     // Custom type operations
     const getCustomType: ChartDBContext['getCustomType'] = useCallback(

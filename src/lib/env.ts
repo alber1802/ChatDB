@@ -25,3 +25,10 @@ export const API_URL = (window?.env?.API_URL ??
     import.meta.env.VITE_API_URL ??
     '') as string;
 export const IS_API_ENABLED = !!API_URL;
+
+// Colaboración en tiempo real (WebSocket /realtime del API). Activa por defecto
+// cuando hay API; VITE_COLLAB_REALTIME=false la apaga sin tocar el guardado.
+export const IS_REALTIME_ENABLED =
+    IS_API_ENABLED &&
+    (window?.env?.COLLAB_REALTIME ?? import.meta.env.VITE_COLLAB_REALTIME) !==
+        'false';

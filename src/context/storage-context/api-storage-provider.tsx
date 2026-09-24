@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import type { StorageContext } from './storage-context';
 import { storageContext } from './storage-context';
 import type { Diagram } from '@/lib/domain/diagram';
@@ -16,6 +22,23 @@ import type { SyncEntity, SyncOperation, SyncStatus } from './sync-engine';
 import { diffTable } from './table-diff';
 import { SyncEngine } from './sync-engine';
 import { syncStatusContext } from '@/context/sync-status-context/sync-status-context';
+import {
+    realtimeContext,
+    type RealtimeListener,
+} from '@/context/realtime-context/realtime-context';
+import {
+    RealtimeClient,
+    realtimeUrl,
+    type RealtimeStatus,
+} from '@/lib/realtime/realtime-client';
+import { API_URL, IS_REALTIME_ENABLED } from '@/lib/env';
+import { supabase } from '@/lib/supabase';
+
+interface RealtimeConnection {
+    diagramId: string;
+    client: RealtimeClient;
+    listeners: Set<RealtimeListener>;
+}
 
 const toDate = (v: string | number | Date | undefined): Date =>
     v ? new Date(v) : new Date();
@@ -32,6 +55,10 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
     const [status, setStatus] = useState<SyncStatus>('idle');
     const [errorMessage, setErrorMessage] = useState<string>();
     const engineRef = useRef<SyncEngine | null>(null);
+    const realtimeRef = useRef<RealtimeConnection | null>(null);
+    const [realtimeStatus, setRealtimeStatus] = useState<
+        RealtimeStatus | 'disabled'
+    >('disabled');
 
     const ensureEngine = useCallback(
         (diagramId: string, version: number): SyncEngine => {
@@ -70,6 +97,74 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
 
     const retry = useCallback(() => {
         void engineRef.current?.flushNow();
+    }, []);
+
+    const closeRealtime = useCallback(() => {
+        realtimeRef.current?.client.destroy();
+        realtimeRef.current = null;
+        setRealtimeStatus('disabled');
+    }, []);
+
+    const subscribeRealtime = useCallback(
+        (diagramId: string, listener: RealtimeListener) => {
+            if (!IS_REALTIME_ENABLED) return () => {};
+            let connection = realtimeRef.current;
+            if (!connection || connection.diagramId !== diagramId) {
+                closeRealtime();
+                const engine = ensureEngine(diagramId, 1);
+                const listeners = new Set<RealtimeListener>();
+                const client = new RealtimeClient({
+                    url: realtimeUrl(API_URL),
+                    diagramId,
+                    initialVersion: engine.currentVersion,
+                    sessionId: engine.currentSessionId,
+                    getToken: async () =>
+                        (await supabase.auth.getSession()).data.session
+                            ?.access_token ?? null,
+                    onBatch: (operations, meta) => {
+                        engineRef.current?.observeVersion(meta.version);
+                        listeners.forEach((l) => l.onBatch?.(operations, meta));
+                    },
+                    onResync: () => listeners.forEach((l) => l.onResync?.()),
+                    onAccess: (role) =>
+                        listeners.forEach((l) => l.onAccess?.(role)),
+                    onDeleted: () => listeners.forEach((l) => l.onDeleted?.()),
+                    onStatus: setRealtimeStatus,
+                });
+                connection = { diagramId, client, listeners };
+                realtimeRef.current = connection;
+                client.connect();
+            }
+            const current = connection;
+            current.listeners.add(listener);
+            return () => {
+                current.listeners.delete(listener);
+                if (
+                    current.listeners.size === 0 &&
+                    realtimeRef.current === current
+                ) {
+                    closeRealtime();
+                }
+            };
+        },
+        [ensureEngine, closeRealtime]
+    );
+
+    // Volver a tener red o a mostrar la pestaña: reconectar ya, sin esperar
+    // al backoff.
+    useEffect(() => {
+        const reconnect = () => realtimeRef.current?.client.reconnectNow();
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') reconnect();
+        };
+        window.addEventListener('online', reconnect);
+        document.addEventListener('visibilitychange', onVisible);
+        return () => {
+            window.removeEventListener('online', reconnect);
+            document.removeEventListener('visibilitychange', onVisible);
+            realtimeRef.current?.client.destroy();
+            realtimeRef.current = null;
+        };
     }, []);
 
     const enqueue = useCallback(
@@ -189,7 +284,15 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
                     `/diagrams/${id}${buildIncludeQuery(options)}`
                 );
                 const diagram = normalizeDiagram(data);
-                ensureEngine(id, diagram.version ?? 1);
+                const engine = ensureEngine(id, diagram.version ?? 1);
+                engine.observeVersion(diagram.version ?? 1);
+                // Recarga completa (resync o reapertura): lo recibido en vivo a
+                // partir de aquí se ordena desde la versión recién cargada.
+                if (realtimeRef.current?.diagramId === id) {
+                    realtimeRef.current.client.resetVersion(
+                        diagram.version ?? 1
+                    );
+                }
                 return diagram;
             } catch {
                 return undefined;
@@ -816,10 +919,17 @@ export const ApiStorageProvider: React.FC<React.PropsWithChildren> = ({
         [status, errorMessage, retry]
     );
 
+    const realtimeValue = useMemo(
+        () => ({ status: realtimeStatus, subscribe: subscribeRealtime }),
+        [realtimeStatus, subscribeRealtime]
+    );
+
     return (
         <storageContext.Provider value={contextValue}>
             <syncStatusContext.Provider value={syncStatusValue}>
-                {children}
+                <realtimeContext.Provider value={realtimeValue}>
+                    {children}
+                </realtimeContext.Provider>
             </syncStatusContext.Provider>
         </storageContext.Provider>
     );

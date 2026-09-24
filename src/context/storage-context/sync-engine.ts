@@ -186,6 +186,25 @@ export class SyncEngine {
         }
     }
 
+    /** Última versión conocida del diagrama (ack propio o lote remoto). */
+    get currentVersion(): number {
+        return this.version;
+    }
+
+    /** Identifica a esta pestaña; el cliente realtime descarta sus propios lotes. */
+    get currentSessionId(): string {
+        return this.sessionId;
+    }
+
+    /**
+     * Otra sesión avanzó la versión (lote recibido por WebSocket). Sin esto el
+     * siguiente envío llevaría un baseVersion viejo y el servidor lo marcaría
+     * como conflicto aunque no lo sea.
+     */
+    observeVersion(version: number): void {
+        this.version = Math.max(this.version, version);
+    }
+
     enqueue(operation: SyncOperation): void {
         const key = opKey(operation);
         const existing = this.queue.get(key);
