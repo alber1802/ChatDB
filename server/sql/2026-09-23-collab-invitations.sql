@@ -3,7 +3,8 @@
 -- 2026-09-23-collab-roles.sql.
 --
 -- Fase 2 de colaboración (docs/collaboration/02-sharing-and-permissions.md):
--- invitaciones a un diagrama por email, para usuarios registrados o no.
+-- dos formas de compartir: (a) directa con un usuario del sistema elegido en un
+-- selector con búsqueda, y (b) invitación por email (registrados o no).
 --
 -- Diseño:
 --   * La tabla diagram_invitations tiene RLS activado y NINGUNA política: no se
@@ -266,42 +267,81 @@ BEGIN
 END;
 $$;
 
--- ─── Autocompletado de usuarios ─────────────────────────────────────────────
--- Prefijo de nombre o email, mínimo 3 caracteres, máx. 8 resultados; excluye
--- al llamante y a los miembros actuales. El email se devuelve enmascarado
--- salvo coincidencia exacta, para no permitir enumerar correos.
+-- ─── Selector de usuarios del sistema ───────────────────────────────────────
+-- Lista para el selector con búsqueda del modal de compartir. Sin texto
+-- devuelve los primeros 50 por nombre; con texto filtra por nombre o email
+-- (contiene). Excluye al llamante, a los bloqueados y a los miembros actuales.
+-- Decisión de producto (2026-09-24): el email se muestra completo, porque la
+-- app es interna (registro vía waitlist) y hace falta distinguir personas.
 CREATE OR REPLACE FUNCTION public.search_users_for_share(p_diagram_id text, p_query text)
- RETURNS TABLE(user_id uuid, display_name text, avatar_url text, email text, email_exact boolean)
+ RETURNS TABLE(user_id uuid, display_name text, avatar_url text, email text)
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
  SET search_path TO 'public'
 AS $$
 DECLARE
-  v_q text := lower(trim(p_query));
+  v_q text := lower(trim(coalesce(p_query, '')));
   v_like text;
 BEGIN
   PERFORM public.assert_diagram_owner(p_diagram_id);
-  IF length(v_q) < 3 THEN RAISE EXCEPTION 'query_too_short'; END IF;
-  v_like := replace(replace(replace(v_q, '\', '\\'), '%', '\%'), '_', '\_') || '%';
+  v_like := '%' || replace(replace(replace(v_q, '\', '\'), '%', '\%'), '_', '\_') || '%';
 
   RETURN QUERY
-  SELECT u.id,
-         up.display_name,
-         up.avatar_url,
-         CASE WHEN lower(u.email) = v_q THEN lower(u.email)::text
-              ELSE left(lower(u.email), 1) || '***@' || split_part(lower(u.email), '@', 2)
-         END,
-         lower(u.email) = v_q
+  SELECT u.id, up.display_name, up.avatar_url, lower(u.email)::text
     FROM auth.users u
     JOIN public.user_profiles up ON up.user_id = u.id
    WHERE u.id <> auth.uid()
      AND NOT up.is_blocked
-     AND (lower(u.email) LIKE v_like OR lower(coalesce(up.display_name, '')) LIKE v_like)
+     AND (v_q = '' OR lower(u.email) LIKE v_like OR lower(coalesce(up.display_name, '')) LIKE v_like)
      AND NOT EXISTS (
        SELECT 1 FROM public.diagram_shares ds
         WHERE ds.diagram_id = p_diagram_id AND ds.shared_with = u.id)
-   ORDER BY (lower(u.email) = v_q) DESC, up.display_name NULLS LAST
-   LIMIT 8;
+   ORDER BY coalesce(up.display_name, u.email)
+   LIMIT 50;
+END;
+$$;
+
+-- ─── Compartir directamente con un usuario del sistema ──────────────────────
+-- Segunda vía además de la invitación por email: el owner elige a alguien del
+-- selector y recibe acceso al instante (la notificación interna la genera el
+-- trigger de 2026-09-24-collab-notifications.sql). Si había una invitación por
+-- email pendiente para esa persona, queda revocada (sustituida).
+CREATE OR REPLACE FUNCTION public.share_diagram_with_user(
+    p_diagram_id text, p_user_id uuid, p_role text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+DECLARE
+  v_share_id uuid;
+  v_email text;
+BEGIN
+  PERFORM public.assert_diagram_owner(p_diagram_id);
+  IF p_role NOT IN ('editor', 'viewer') THEN RAISE EXCEPTION 'invalid_role'; END IF;
+  IF p_user_id = auth.uid() THEN RAISE EXCEPTION 'cannot_invite_self'; END IF;
+
+  SELECT lower(u.email) INTO v_email
+    FROM auth.users u JOIN public.user_profiles up ON up.user_id = u.id
+   WHERE u.id = p_user_id AND NOT up.is_blocked;
+  IF v_email IS NULL THEN RAISE EXCEPTION 'user_not_found'; END IF;
+
+  IF EXISTS (SELECT 1 FROM public.diagram_shares
+              WHERE diagram_id = p_diagram_id AND shared_with = p_user_id) THEN
+    RAISE EXCEPTION 'already_member';
+  END IF;
+
+  INSERT INTO public.diagram_shares (diagram_id, owner_id, shared_with, role)
+  VALUES (p_diagram_id, auth.uid(), p_user_id, p_role)
+  RETURNING id INTO v_share_id;
+
+  UPDATE public.diagram_invitations
+     SET status = 'revoked', responded_at = now()
+   WHERE diagram_id = p_diagram_id AND email = v_email AND status = 'pending';
+
+  PERFORM public.log_activity('share.create', 'diagram', p_diagram_id,
+    jsonb_build_object('shared_with', p_user_id, 'role', p_role));
+  RETURN v_share_id;
 END;
 $$;
 
@@ -317,7 +357,8 @@ REVOKE EXECUTE ON FUNCTION
     public.list_my_invitations(),
     public.accept_diagram_invitation(uuid, text),
     public.decline_diagram_invitation(uuid),
-    public.search_users_for_share(text, text)
+    public.search_users_for_share(text, text),
+    public.share_diagram_with_user(text, uuid, text)
   FROM PUBLIC, anon;
 
 GRANT EXECUTE ON FUNCTION
@@ -328,13 +369,14 @@ GRANT EXECUTE ON FUNCTION
     public.list_my_invitations(),
     public.accept_diagram_invitation(uuid, text),
     public.decline_diagram_invitation(uuid),
-    public.search_users_for_share(text, text)
+    public.search_users_for_share(text, text),
+    public.share_diagram_with_user(text, uuid, text)
   TO authenticated;
 
 COMMIT;
 
 -- Rollback:
---   DROP FUNCTION public.search_users_for_share(text, text), public.decline_diagram_invitation(uuid),
+--   DROP FUNCTION public.share_diagram_with_user(text, uuid, text), public.search_users_for_share(text, text), public.decline_diagram_invitation(uuid),
 --     public.accept_diagram_invitation(uuid, text), public.list_my_invitations(),
 --     public.resend_diagram_invitation(uuid, text), public.revoke_diagram_invitation(uuid),
 --     public.list_diagram_invitations(text), public.create_diagram_invitation(text, text, text, text),

@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -10,6 +10,7 @@ const api = vi.hoisted(() => ({
     listMembers: vi.fn(),
     listInvitations: vi.fn(),
     invite: vi.fn(),
+    shareWithUser: vi.fn(),
     searchCandidates: vi.fn(),
     leaveDiagram: vi.fn(),
     updateMemberRole: vi.fn(),
@@ -31,6 +32,16 @@ vi.mock('@/lib/notifications', () => ({
     notify: { success: vi.fn(), error: vi.fn() },
 }));
 
+beforeAll(() => {
+    // cmdk usa APIs de layout que happy-dom no implementa del todo.
+    Element.prototype.scrollIntoView ??= vi.fn();
+    globalThis.ResizeObserver ??= class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    } as unknown as typeof ResizeObserver;
+});
+
 const renderDialog = () =>
     render(
         <MemoryRouter>
@@ -42,6 +53,13 @@ const renderDialog = () =>
         </MemoryRouter>
     );
 
+const ownerAccess = {
+    id: 'd1',
+    name: 'Ventas',
+    accessRole: 'owner',
+    owner: { id: 'me', displayName: 'Vladimir', avatarUrl: null },
+};
+
 describe('ShareDiagramDialog', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -50,13 +68,53 @@ describe('ShareDiagramDialog', () => {
         api.searchCandidates.mockResolvedValue([]);
     });
 
-    it('lets the owner invite a typed email and shows the link when no email was sent', async () => {
-        api.getDiagramAccess.mockResolvedValue({
-            id: 'd1',
-            name: 'Ventas',
-            accessRole: 'owner',
-            owner: { id: 'me', displayName: 'Vladimir', avatarUrl: null },
-        });
+    it('shares directly with a user picked from the searchable system user list', async () => {
+        api.getDiagramAccess.mockResolvedValue(ownerAccess);
+        api.searchCandidates.mockResolvedValue([
+            {
+                userId: 'u-ana',
+                displayName: 'Ana Pérez',
+                avatarUrl: null,
+                email: 'ana@example.com',
+            },
+            {
+                userId: 'u-juan',
+                displayName: 'Juan López',
+                avatarUrl: null,
+                email: 'juan@example.com',
+            },
+        ]);
+        api.shareWithUser.mockResolvedValue({ id: 's1' });
+        const user = userEvent.setup();
+        renderDialog();
+
+        await user.click(
+            await screen.findByRole('combobox', {
+                name: /seleccionar usuario/i,
+            })
+        );
+        // Al abrir, lista usuarios del sistema sin necesidad de escribir.
+        await waitFor(() =>
+            expect(api.searchCandidates).toHaveBeenCalledWith(
+                'd1',
+                '',
+                expect.anything()
+            )
+        );
+        await user.click(await screen.findByText('Juan López'));
+
+        await user.click(screen.getByRole('button', { name: 'Compartir' }));
+
+        expect(api.shareWithUser).toHaveBeenCalledWith(
+            'd1',
+            'u-juan',
+            'editor'
+        );
+        await waitFor(() => expect(api.listMembers).toHaveBeenCalledTimes(2));
+    });
+
+    it('keeps the email invitation as a second way and shows the link when no email was sent', async () => {
+        api.getDiagramAccess.mockResolvedValue(ownerAccess);
         api.invite.mockResolvedValue({
             invitation: {
                 id: 'i1',
@@ -72,15 +130,15 @@ describe('ShareDiagramDialog', () => {
         const user = userEvent.setup();
         renderDialog();
 
-        const input = await screen.findByRole('combobox', {
-            name: /nombre o correo/i,
-        });
-        const inviteButton = screen.getByRole('button', { name: 'Invitar' });
-        expect(inviteButton).toBeDisabled();
+        await user.click(
+            await screen.findByRole('tab', { name: /por correo/i })
+        );
+        const input = screen.getByRole('textbox', { name: /correo/i });
+        const send = screen.getByRole('button', { name: /enviar invitación/i });
+        expect(send).toBeDisabled();
 
         await user.type(input, 'Ana@Example.com');
-        expect(inviteButton).toBeEnabled();
-        await user.click(inviteButton);
+        await user.click(send);
 
         expect(api.invite).toHaveBeenCalledWith(
             'd1',
@@ -91,7 +149,6 @@ describe('ShareDiagramDialog', () => {
             await screen.findByDisplayValue('https://app/invite/tok')
         ).toBeInTheDocument();
         expect(screen.getByText('ana@example.com')).toBeInTheDocument();
-        expect(screen.getByText(/Vladimir/)).toBeInTheDocument();
     });
 
     it('shows a read-only member list and a leave button to non-owners', async () => {
@@ -116,7 +173,7 @@ describe('ShareDiagramDialog', () => {
         expect(
             await screen.findByRole('button', { name: /abandonar diagrama/i })
         ).toBeInTheDocument();
-        expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+        expect(screen.queryByRole('tab')).not.toBeInTheDocument();
         await waitFor(() =>
             expect(screen.getByText('Lector')).toBeInTheDocument()
         );

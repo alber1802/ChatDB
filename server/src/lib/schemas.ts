@@ -173,7 +173,16 @@ export const invitationCreateSchema = z.object({
 });
 
 export const shareCandidatesQuerySchema = z.object({
-    q: z.string().trim().min(3).max(100),
+    q: z.string().trim().max(100).optional().default(''),
+});
+
+export const shareCreateSchema = z.object({
+    userId: z.string().uuid(),
+    role: z.enum(['editor', 'viewer']),
+});
+
+export const notificationsReadSchema = z.object({
+    ids: z.array(z.string().uuid()).max(100).optional(),
 });
 
 export const loginSchema = z.object({

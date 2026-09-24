@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { withUserContext } from '../../config/db.js';
 import { authenticate } from '../../middleware/auth.js';
-import { shareRolePatchSchema } from '../../lib/schemas.js';
+import { shareCreateSchema, shareRolePatchSchema } from '../../lib/schemas.js';
 import { sharesService } from './shares.service.js';
 
-// Las altas de miembros NO se hacen aquí: pasan por invitaciones (Fase 2,
-// docs/collaboration/02-sharing-and-permissions.md) para que nadie reciba
-// acceso sin aceptarlo.
+// Dos formas de dar acceso (docs/collaboration/02-sharing-and-permissions.md):
+// directa a un usuario del sistema (POST aquí, con notificación interna) o
+// invitación por email (modules/invitations).
 export const sharesRouter = Router();
 sharesRouter.use(authenticate);
 
@@ -16,6 +16,23 @@ sharesRouter.get('/diagrams/:diagramId/shares', async (req, res, next) => {
             sharesService.list(client, req.params.diagramId)
         );
         res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
+sharesRouter.post('/diagrams/:diagramId/shares', async (req, res, next) => {
+    try {
+        const { userId, role } = shareCreateSchema.parse(req.body);
+        const id = await withUserContext(req.user!.id, (client) =>
+            sharesService.shareWithUser(
+                client,
+                req.params.diagramId,
+                userId,
+                role
+            )
+        );
+        res.status(201).json({ id });
     } catch (err) {
         next(err);
     }

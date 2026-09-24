@@ -1,24 +1,10 @@
 import { ApiError } from '@/lib/api-client';
+import type { AppNotification } from './collaboration-api';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export const isValidEmail = (value: string): boolean =>
     EMAIL_RE.test(value.trim());
-
-/**
- * Email al que se enviará la invitación. El autocompletado devuelve emails
- * enmascarados (`a***@dominio.com`) salvo coincidencia exacta, así que un
- * candidato enmascarado nunca se usa como destinatario: en ese caso se invita
- * a lo que el usuario escribió, si es un email válido.
- */
-export function resolveInviteEmail(
-    typed: string,
-    candidate: { email: string; emailExact: boolean } | undefined
-): string | null {
-    if (candidate?.emailExact) return candidate.email.toLowerCase();
-    const normalized = typed.trim().toLowerCase();
-    return isValidEmail(normalized) ? normalized : null;
-}
 
 const ERROR_MESSAGES: Record<string, string> = {
     invitation_exists: 'Ya hay una invitación pendiente para ese correo.',
@@ -33,6 +19,9 @@ const ERROR_MESSAGES: Record<string, string> = {
         'Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.',
     validation_error: 'Revisa los datos introducidos.',
     forbidden_role: 'Tu acceso a este diagrama es de solo lectura.',
+    user_not_found: 'Ese usuario no existe o está bloqueado.',
+    migration_pending:
+        'Falta aplicar una migración de base de datos para usar esta función. Avisa al administrador.',
 };
 
 export function invitationErrorMessage(err: unknown): string {
@@ -53,4 +42,55 @@ export function initialsOf(
         .slice(0, 2)
         .map((part) => part[0]!.toUpperCase())
         .join('');
+}
+
+const ROLE_NOUN: Record<string, string> = {
+    editor: 'editor',
+    viewer: 'lector',
+};
+
+export interface NotificationView {
+    text: string;
+    /** Destino al hacer clic; ausente si el usuario ya no tiene acceso. */
+    href?: string;
+    /** Presente en invitaciones por email: se ofrece Aceptar/Rechazar. */
+    invitationId?: string;
+}
+
+export function notificationView(n: AppNotification): NotificationView {
+    const p = n.payload as Record<string, string | undefined>;
+    const diagram = `“${p.diagram_name ?? 'un diagrama'}”`;
+    const by = p.by_name ?? 'Alguien';
+    const member = p.member_name ?? 'Un miembro';
+    const role = ROLE_NOUN[p.role ?? ''] ?? p.role ?? '';
+    const href = n.diagramId ? `/diagrams/${n.diagramId}` : undefined;
+
+    switch (n.type) {
+        case 'diagram_shared':
+            return {
+                text: `${by} compartió ${diagram} contigo como ${role}.`,
+                href,
+            };
+        case 'invitation_received':
+            return {
+                text: `${by} te invitó a ${diagram} como ${role}.`,
+                invitationId: p.invitation_id,
+            };
+        case 'invitation_accepted':
+            return {
+                text: `${member} aceptó tu invitación a ${diagram}.`,
+                href,
+            };
+        case 'role_changed':
+            return {
+                text: `${by} cambió tu rol: ahora eres ${role} en ${diagram}.`,
+                href,
+            };
+        case 'access_removed':
+            return { text: `${by} quitó tu acceso a ${diagram}.` };
+        case 'member_left':
+            return { text: `${member} abandonó ${diagram}.`, href };
+        default:
+            return { text: 'Hay novedades en uno de tus diagramas.', href };
+    }
 }

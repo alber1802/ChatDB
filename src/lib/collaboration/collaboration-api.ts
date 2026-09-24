@@ -42,7 +42,15 @@ export interface ShareCandidate {
     displayName: string | null;
     avatarUrl: string | null;
     email: string;
-    emailExact: boolean;
+}
+
+export interface AppNotification {
+    id: string;
+    type: string;
+    diagramId: string | null;
+    payload: Record<string, unknown>;
+    readAt: string | null;
+    createdAt: string;
 }
 
 export interface InvitationDelivery {
@@ -63,6 +71,13 @@ const enc = encodeURIComponent;
 export const collaborationApi = {
     getDiagramAccess: (diagramId: string) =>
         apiFetch<DiagramAccessInfo>(`/diagrams/${enc(diagramId)}`),
+
+    /** Compartir directamente con un usuario del sistema (con notificación interna). */
+    shareWithUser: (diagramId: string, userId: string, role: MemberRole) =>
+        apiFetch<{ id: string }>(`/diagrams/${enc(diagramId)}/shares`, {
+            method: 'POST',
+            body: JSON.stringify({ userId, role }),
+        }),
 
     listMembers: (diagramId: string) =>
         apiFetch<DiagramMember[]>(`/diagrams/${enc(diagramId)}/shares`),
@@ -126,6 +141,17 @@ export const collaborationApi = {
             body: JSON.stringify({ token }),
         }),
 
+    listNotifications: (limit = 20) =>
+        apiFetch<{ items: AppNotification[]; unreadCount: number }>(
+            `/me/notifications?limit=${limit}`
+        ),
+
+    markNotificationsRead: (ids?: string[]) =>
+        apiFetch<void>('/me/notifications/read', {
+            method: 'POST',
+            body: JSON.stringify(ids ? { ids } : {}),
+        }),
+
     declineInvitation: (invitationId: string) =>
         apiFetch<void>(`/invitations/${enc(invitationId)}/decline`, {
             method: 'POST',
@@ -154,3 +180,9 @@ export const pendingInviteToken = {
         }
     },
 };
+
+// Aviso entre componentes: la lista de diagramas cambió (p.ej. se aceptó una
+// invitación desde la campana). El Dashboard escucha y recarga.
+export const DIAGRAMS_CHANGED_EVENT = 'chartdb:diagrams-changed';
+export const notifyDiagramsChanged = () =>
+    window.dispatchEvent(new Event(DIAGRAMS_CHANGED_EVENT));

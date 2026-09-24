@@ -60,6 +60,7 @@ describe('mapInvitationError', () => {
         ['invitation_email_mismatch', 403],
         ['query_too_short', 400],
         ['invalid_role', 400],
+        ['user_not_found', 404],
     ])('maps %s to HTTP %i', (code, status) => {
         const mapped = mapInvitationError(pgError(code));
         expect(mapped).toBeInstanceOf(AppError);

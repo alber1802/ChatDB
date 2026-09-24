@@ -6,6 +6,30 @@ Que el propietario invite a personas (registradas o no) con rol `editor` o
 `viewer`, y que todos gestionen el acceso desde el editor y el Dashboard, sin
 invitaciones duplicadas ni accesos sin consentimiento.
 
+## Actualización 2026-09-24 (decisión del usuario)
+
+Hay **dos formas de dar acceso**, ambas desde el modal (pestañas):
+
+1. **Usuarios del sistema** — selector con búsqueda que lista a los usuarios
+   registrados (nombre + email completo; sin texto muestra los primeros 50). El
+   acceso es **inmediato** (`share_diagram_with_user`, `POST /diagrams/:id/shares`)
+   y la persona recibe una **notificación interna** (campana).
+2. **Por correo** — la invitación descrita abajo (aceptar/rechazar, 7 días,
+   enlace copiable si no hay mailer). Si el correo ya tiene cuenta, además le
+   llega una notificación interna con Aceptar/Rechazar.
+
+Notificaciones internas: tabla `user_notifications` alimentada por triggers
+(`server/sql/2026-09-24-collab-notifications.sql`): `diagram_shared`,
+`invitation_received`, `invitation_accepted`, `role_changed`,
+`access_removed`, `member_left`. API `GET /me/notifications`,
+`POST /me/notifications/read`. La campana consulta cada 30 s (push por
+WebSocket en Fase 3). El email completo y el acceso sin aceptación sustituyen a
+las decisiones de privacidad/consentimiento originales de abajo para usuarios
+del sistema.
+
+Orden de migraciones: `2026-09-23-collab-roles.sql` →
+`2026-09-23-collab-invitations.sql` → `2026-09-24-collab-notifications.sql`.
+
 ## Flujo
 
 ```

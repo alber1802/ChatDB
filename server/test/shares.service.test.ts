@@ -95,4 +95,34 @@ describe('sharesService', () => {
             sharesService.leave(client, 'd1', 'u2')
         ).rejects.toMatchObject({ statusCode: 404 });
     });
+
+    it('shares directly with a system user through the SQL function', async () => {
+        const { client, query } = clientWith({
+            rows: [{ share_diagram_with_user: 's9' }],
+        });
+        const id = await sharesService.shareWithUser(
+            client,
+            'd1',
+            '00000000-0000-0000-0000-000000000002',
+            'viewer'
+        );
+        expect(id).toBe('s9');
+        expect(String(query.mock.calls[0]![0])).toMatch(
+            /share_diagram_with_user\(\$1, \$2, \$3\)/
+        );
+    });
+
+    it('maps business errors of the direct share', async () => {
+        const query = vi.fn(async () => {
+            throw Object.assign(new Error('already_member'), { code: 'P0001' });
+        });
+        await expect(
+            sharesService.shareWithUser(
+                { query } as unknown as PoolClient,
+                'd1',
+                'u2',
+                'editor'
+            )
+        ).rejects.toMatchObject({ statusCode: 409, code: 'already_member' });
+    });
 });

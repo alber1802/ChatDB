@@ -22,6 +22,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/dropdown-menu/dropdown-menu';
 import { Badge } from '@/components/badge/badge';
+import { NotificationsBell } from '@/components/notifications-bell/notifications-bell';
 import { ProfileSettingsDialog } from './profile-settings-dialog';
 
 export const DashboardHeader: React.FC = () => {
@@ -116,6 +117,10 @@ export const DashboardHeader: React.FC = () => {
 
                 {/* Language Select */}
                 <LanguageNav />
+
+                {IS_SUPABASE_ENABLED && user && (
+                    <NotificationsBell className="size-9 rounded-full" />
+                )}
 
                 {/* Profile menu */}
                 {IS_SUPABASE_ENABLED && user && (

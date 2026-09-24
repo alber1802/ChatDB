@@ -31,7 +31,6 @@ export interface ShareCandidateDto {
     displayName: string | null;
     avatarUrl: string | null;
     email: string;
-    emailExact: boolean;
 }
 
 // Las funciones SQL (server/sql/2026-09-23-collab-invitations.sql) señalan
@@ -52,6 +51,7 @@ const BUSINESS_ERRORS: Record<string, [number, string]> = {
     ],
     query_too_short: [400, 'Search query must have at least 3 characters'],
     invalid_role: [400, 'Invalid role'],
+    user_not_found: [404, 'User not found'],
 };
 
 export function mapInvitationError(err: unknown): unknown {
@@ -61,7 +61,7 @@ export function mapInvitationError(err: unknown): unknown {
     return known ? new AppError(known[0], known[1], pg.message) : err;
 }
 
-async function run<T>(fn: () => Promise<T>): Promise<T> {
+export async function run<T>(fn: () => Promise<T>): Promise<T> {
     try {
         return await fn();
     } catch (err) {
@@ -193,7 +193,6 @@ export const invitationsService = {
             displayName: (r.display_name as string) ?? null,
             avatarUrl: (r.avatar_url as string) ?? null,
             email: String(r.email),
-            emailExact: Boolean(r.email_exact),
         }));
     },
 };

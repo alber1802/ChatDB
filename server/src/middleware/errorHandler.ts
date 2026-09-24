@@ -35,6 +35,16 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
             message: 'Permission denied',
         });
     }
+    if (pgCode === '42883' || pgCode === '42P01') {
+        // Función o tabla inexistente: casi siempre una migración de
+        // server/sql/ sin aplicar todavía en esta base.
+        logger.error({ err }, 'Database object missing — pending migration?');
+        return res.status(503).json({
+            error: 'migration_pending',
+            message:
+                'This feature needs a database migration that has not been applied yet',
+        });
+    }
     if (pgCode === 'P0001') {
         // RAISE EXCEPTION from SECURITY DEFINER functions (e.g. get_admin_users)
         return res.status(403).json({

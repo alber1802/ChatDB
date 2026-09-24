@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg';
 import { AppError } from '../../lib/types.js';
+import { run } from '../invitations/invitations.service.js';
 
 export type ShareRole = 'editor' | 'viewer';
 
@@ -32,6 +33,27 @@ function rowToShare(r: Record<string, unknown>): ShareDto {
 // borrar su propia fila (abandonar). Un 0 en rowCount significa "no existe o
 // no tienes permiso" — RLS no distingue, así que se responde 404 en ambos.
 export const sharesService = {
+    /**
+     * Compartir directamente con un usuario del sistema (vía SQL
+     * share_diagram_with_user, que valida owner/duplicados; la notificación
+     * interna la crea un trigger).
+     */
+    async shareWithUser(
+        client: PoolClient,
+        diagramId: string,
+        userId: string,
+        role: ShareRole
+    ): Promise<string> {
+        const { rows } = await run(() =>
+            client.query(`SELECT share_diagram_with_user($1, $2, $3)`, [
+                diagramId,
+                userId,
+                role,
+            ])
+        );
+        return String(rows[0].share_diagram_with_user);
+    },
+
     async list(client: PoolClient, diagramId: string): Promise<ShareDto[]> {
         const { rows } = await client.query(
             `SELECT ds.id, ds.diagram_id, ds.owner_id, ds.shared_with, ds.role,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-client';
+import { DIAGRAMS_CHANGED_EVENT } from '@/lib/collaboration/collaboration-api';
 import { canManageDiagram } from '@/lib/domain/diagram-access';
 import { useStorage } from '@/hooks/use-storage';
 import { cloneDiagram } from '@/lib/clone';
@@ -91,6 +92,14 @@ export const useDashboard = () => {
 
     useEffect(() => {
         fetchDiagrams();
+    }, [fetchDiagrams]);
+
+    // Invitación aceptada desde la campana u otro componente.
+    useEffect(() => {
+        const onChanged = () => void fetchDiagrams();
+        window.addEventListener(DIAGRAMS_CHANGED_EVENT, onChanged);
+        return () =>
+            window.removeEventListener(DIAGRAMS_CHANGED_EVENT, onChanged);
     }, [fetchDiagrams]);
 
     return {

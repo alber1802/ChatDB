@@ -5,6 +5,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { DiagramName } from './diagram-name';
 import { LastSaved } from './last-saved';
 import { ShareButton } from './share-button';
+import { NotificationsBell } from '@/components/notifications-bell/notifications-bell';
 import { LanguageNav } from './language-nav/language-nav';
 import { Menu } from './menu/menu';
 
@@ -47,6 +48,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
                 <LanguageNav />
                 {IS_SUPABASE_ENABLED && user && (
                     <div className="flex items-center gap-1.5 border-l border-border pl-2.5">
+                        <NotificationsBell />
                         {isAdmin && isAdmin() && (
                             <Button
                                 variant="outline"

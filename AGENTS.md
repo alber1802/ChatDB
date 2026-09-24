@@ -137,7 +137,9 @@ Implementado hasta ahora:
 - **Fase 2 — invitaciones**: tabla `diagram_invitations` sin acceso directo,
   todo vía funciones SECURITY DEFINER (`server/sql/2026-09-23-collab-invitations.sql`);
   módulo `server/src/modules/invitations/`; mailer opcional Resend
-  (`RESEND_API_KEY`, `MAIL_FROM`, `APP_URL`). Frontend: `ShareDiagramDialog`
+  (`RESEND_API_KEY`, `MAIL_FROM`, `APP_URL`), compartir directo con usuarios
+  del sistema (`share_diagram_with_user`) y notificaciones internas por triggers
+  (`user_notifications`, campana `NotificationsBell`). Frontend: `ShareDiagramDialog`
   (registrado en `dialog-context`), botón en la barra del editor,
   `PendingInvitations` en el Dashboard y ruta `/invite/:token`.
   Ojo: dentro de Postgres `auth.email()` es NULL (el backend solo fija `sub` y
